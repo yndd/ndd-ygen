@@ -1,0 +1,34 @@
+path:
+    # /srl_nokia-system/system/mtu:
+    /srl_nokia-system/system/name:
+    /srl_nokia-system/system/ntp:
+    /srl_nokia-system/system/network-instance/protocols/bgp-vpn:
+    /srl_nokia-system/system/network-instance/protocols/evpn:
+        hierarchy:
+            /ethernet-segments/bgp-instance:
+                hierarchy:
+                    /ethernet-segment:
+    /srl_nokia-interfaces/interface:
+        hierarchy:
+            /subinterface:
+    /srl_nokia-tunnel-interfaces/tunnel-interface:
+        hierarchy:
+           /vxlan-interface:
+    /srl_nokia-routing-policy/routing-policy/as-path-set:
+    /srl_nokia-routing-policy/routing-policy/community-set:
+    /srl_nokia-routing-policy/routing-policy/policy:
+    /srl_nokia-routing-policy/routing-policy/prefix-set:    
+    /srl_nokia-network-instance/network-instance:
+        excludes: [protocols]
+        hierarchy:
+            /static-routes:
+            /aggregate-routes:
+            /next-hop-groups:
+            /protocols/bgp-evpn:
+            /protocols/bgp-vpn:
+            /protocols/bgp:
+            /protocols/isis:
+            /protocols/ospf:
+            /protocols/linux:
+    /srl_nokia-bfd/bfd:
+

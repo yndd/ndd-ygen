@@ -1,0 +1,68 @@
+module srl_nokia-features {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/features";
+  prefix srl_nokia-feat;
+
+  description
+    "YANG module detailing SRLinux features";
+
+  // features - alphabetical
+
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+
+  feature bridged {
+    description
+      "Support for MAC-VRF services";
+  }
+
+  feature lag {
+    description
+      "Support for link aggregation groups";
+  }
+  
+  feature mpls {
+    description
+      "Support for MPLS";
+  }
+
+  feature fixed {
+    description
+      "The platform is in a fixed configuration, i.e. non-chassis platforms";
+  }
+
+  feature future_20_10 {
+    description
+      "Always false while it exists. The feature is for the 20.10 release. Allows implemented feature to be off";
+  }
+
+  feature chassis {
+    description
+      "The platform is in a chassis configuration";
+  }
+
+  //chipsets
+
+  feature jericho2;
+
+  feature tomahawk3;
+
+  feature trident3;
+
+  // platforms - alphabetical
+
+  feature platform-7220-d1; // 7220 IXR-D1
+
+  feature platform-7220-d2; // 7220 IXR-D2
+
+  feature platform-7220-d3; // 7220 IXR-D3
+
+  feature platform-7250-ixr; // 7250 IXR-6/10
+
+  feature platform-7250-j2;  // J2 pizza
+
+  feature platform-7220-th3; // TH3 pizza
+
+}

@@ -1,0 +1,59 @@
+{{- $prefix := .Prefix}}
+// {{ .ResourceNameWithPrefix}}Spec struct
+type {{ .ResourceNameWithPrefix}}Parameters struct {
+    {{- range $index, $hinfo := $.HElements}}
+    {{- if ne $hinfo.Key ""}}
+    {{ $prefix | toUpperCamelCase}}{{ $hinfo.Name |  toUpperCamelCase}}{{ $hinfo.Key |  toUpperCamelCase}} *{{ $hinfo.Type}} `json:"{{ $hinfo.Name  |  toKebabCase}}-{{ $hinfo.Key  |  toKebabCase}}"`
+    {{- end}}
+    {{- end}}
+	{{ .ResourceNameWithPrefix}} *{{ .ResourceLastElement}} `json:"{{.ResourceName |  toKebabCase }}"`
+}
+
+// {{ .ResourceNameWithPrefix}}Status struct
+type {{ .ResourceNameWithPrefix}}Observation struct {
+}
+
+// A {{ .ResourceNameWithPrefix}}Spec defines the desired state of a {{ .ResourceNameWithPrefix}}.
+type {{ .ResourceNameWithPrefix}}Spec struct {
+	nddv1.ResourceSpec `json:",inline"`
+	ForNetworkNode     {{ .ResourceNameWithPrefix}}Parameters `json:"forNetworkNode"`
+}
+
+// A {{ .ResourceNameWithPrefix}}Status represents the observed state of a {{ .ResourceNameWithPrefix}}.
+type {{ .ResourceNameWithPrefix}}Status struct {
+	nddv1.ResourceStatus `json:",inline"`
+	AtNetworkNode        {{ .ResourceNameWithPrefix}}Observation `json:"atNetworkNode,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// {{ .ResourceNameWithPrefix}} is the Schema for the {{ .ResourceNameWithPrefix}} API
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="TARGET",type="string",JSONPath=".status.conditions[?(@.kind=='TargetFound')].status"
+// +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.conditions[?(@.kind=='Ready')].status"
+// +kubebuilder:printcolumn:name="SYNC",type="string",JSONPath=".status.conditions[?(@.kind=='Synced')].status"
+// +kubebuilder:printcolumn:name="LOCALLEAFREF",type="string",JSONPath=".status.conditions[?(@.kind=='InternalLeafrefValidationSuccess')].status"
+// +kubebuilder:printcolumn:name="EXTLEAFREF",type="string",JSONPath=".status.conditions[?(@.kind=='ExternalLeafrefValidationSuccess')].status"
+// +kubebuilder:printcolumn:name="PARENTDEP",type="string",JSONPath=".status.conditions[?(@.kind=='ParentValidationSuccess')].status"
+// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:resource:scope=Cluster,categories={ndd,srl},shortName=srlint
+type {{ .ResourceNameWithPrefix}} struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   {{ .ResourceNameWithPrefix}}Spec   `json:"spec,omitempty"`
+	Status {{ .ResourceNameWithPrefix}}Status `json:"status,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// {{ .ResourceNameWithPrefix}}List contains a list of {{ .ResourceNameWithPrefix}}s
+type {{ .ResourceNameWithPrefix}}List struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []{{ .ResourceNameWithPrefix}} `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&{{ .ResourceNameWithPrefix}}{}, &{{ .ResourceNameWithPrefix}}List{})
+}

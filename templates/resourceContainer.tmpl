@@ -1,0 +1,67 @@
+
+// {{.Name | toUpperCamelCase}} struct
+type {{.Name | toUpperCamelCase}} struct {
+    {{- $tick := "`" }}
+    {{- /* loop over container entries */}}
+    {{- range $index, $entry := $.Entries}}
+        {{- /* range processing */}}
+        {{- range $i, $range := $entry.Range}}
+        {{- if eq $i 0}}
+        // kubebuilder:validation:Minimum={{$range}}
+        {{- end}}
+        {{- if eq $i 1}}
+        // kubebuilder:validation:Maximum={{$range}}
+        {{- end}}
+        {{- end}}
+        {{- /* length processing */}}
+        {{- range $i, $length := $entry.Length}}
+        {{- if eq $i 0}}
+        // kubebuilder:validation:MinLength={{$length}}
+        {{- end}}
+        {{- if eq $i 1}}
+        // kubebuilder:validation:MaxLength={{$length}}
+        {{- end}}
+        {{- end}}
+        {{- /* pattern processing */}}
+        {{- if gt ($entry.Pattern | len) 0}}
+        {{- if $entry.Union}}
+        // +kubebuilder:validation:Optional
+        {{- else}}
+        // +kubebuilder:validation:Required
+        {{- end}}
+        // +kubebuilder:validation:Pattern="{{$entry.Pattern}}"
+        {{- end}}
+        {{- /* enum processing */}}
+        {{- if gt ($entry.Enum | len) 0}}
+        // +kubebuilder:validation:Enum={{$entry.EnumString}}
+        {{- end}}
+        {{- /* default processing */}}
+        {{- if gt ($entry.Default | len) 0}}
+        // +kubebuilder:default:={{$entry.Default}}
+        {{- end}}
+        {{- /* process the entries - difference when there is a container with a key or not*/}}
+        {{- if $entry.Next}}
+        {{- /* list in the container*/}}
+        {{- if gt ($entry.Key | len) 0}}
+        {{- if $entry.Mandatory}}
+        {{$entry.Name | toUpperCamelCase}} []*{{$entry.Type}} {{ $tick }}json:"{{$entry.Name | toKebabCase}}"{{ $tick }}
+        {{- else}}
+        {{$entry.Name | toUpperCamelCase}} []*{{$entry.Type}} {{ $tick }}json:"{{$entry.Name | toKebabCase}},omitempty"{{ $tick }}
+        {{- end}}
+        {{- else}}
+        {{- if $entry.Mandatory}}
+        {{$entry.Name | toUpperCamelCase}} *{{$entry.Type}} {{ $tick }}json:"{{$entry.Name | toKebabCase}}"{{ $tick }}
+        {{- else}}
+        {{$entry.Name | toUpperCamelCase}} *{{$entry.Type}} {{ $tick }}json:"{{$entry.Name | toKebabCase}},omitempty"{{ $tick }}
+        {{- end}}
+        {{- end}}
+        {{- else}}
+        {{- /* regular leaf in the container*/}}
+        {{- if $entry.Mandatory}}
+        {{$entry.Name | toUpperCamelCase}} *{{$entry.Type}} {{ $tick }}json:"{{$entry.Name | toKebabCase}}"{{ $tick }}
+        {{- else}}
+        {{$entry.Name | toUpperCamelCase}} *{{$entry.Type}} {{ $tick }}json:"{{$entry.Name | toKebabCase}},omitempty"{{ $tick }}
+        {{- end}}
+        {{- end}}
+    {{- end}}
+}

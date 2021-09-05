@@ -1,0 +1,32 @@
+{{- if gt (.LeafRefs | len) 0 }}
+var {{.Kind}}leafRef{{.ResourceName}} = []*LeafRef{
+	{{- range $index, $leafref := $.LeafRefs}}
+	{
+		LocalPath: &config.Path{
+			Elem: []*config.PathElem{
+		{{- range $i, $elem := $leafref.LocalPath.Elem}}
+		{{- if eq ($elem.Key | len) 0}}
+				{ Name: "{{$elem.Name}}"},
+		{{- else }}
+				{ Name: "{{$elem.Name}}", Key: map[string]string{"{{$elem.Key}}": ""}}, 
+		{{- end }}
+		{{- end }}
+			},
+		},
+		RemotePath: &config.Path{
+			Elem: []*config.PathElem{
+		{{- range $i, $elem := $leafref.RemotePath.Elem}}
+		{{- if eq ($elem.Key | len) 0}}
+				{ Name: "{{$elem.Name}}"},
+		{{- else }}
+				{ Name: "{{$elem.Name}}", Key: map[string]string{"{{$elem.Key}}": ""}}, 
+		{{- end }}
+		{{- end }}
+			},
+		},
+	},
+	{{- end }}
+}
+{{- else}}
+var LocalleafRef{{.ResourceName}} = []*LeafRef{}
+{{- end}}
