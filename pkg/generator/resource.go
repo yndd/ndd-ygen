@@ -38,7 +38,6 @@ func (g *Generator) FindBestMatch(path gnmi.Path) (*resource.Resource, bool) {
 			// find the string which matches the most
 			// should be the last match normally since we added them
 			// to the list from root to lower hierarchy
-
 			if len([]rune(*r.GetAbsoluteXPath())) > minLength {
 				minLength = len([]rune(*r.GetAbsoluteXPath()))
 				resMatch = r
@@ -49,11 +48,71 @@ func (g *Generator) FindBestMatch(path gnmi.Path) (*resource.Resource, bool) {
 	return resMatch, found
 }
 
-// IsResourcesInit checks if the resource exists
+// FindBestMatchNew finds the resource that has the best match, otherwise the resource is not found
+// it uses the pathElem names to compare between the resource path and the input path
+func (g *Generator) FindBestMatchNew(inputPath gnmi.Path) (*resource.Resource, bool) {
+	minLength := 0
+	resMatch := &resource.Resource{}
+	found := false
+	// loop over all resources
+	for _, r := range g.Resources {
+		// if the input path is smaller than the resource we know there is no match
+		if len(r.GetResourcePath().GetElem()) <= len(inputPath.GetElem()) {
+			found = true
+			// given we know the input PathElem are >= the resource Elements we can compare
+			// the elements using the index of the resource PathElem
+			for i, PathElem := range r.GetResourcePath().GetElem() {
+				// if the name of the PathElem does not match this is not a resource that matches
+				if PathElem.GetName() != inputPath.GetElem()[i].GetName() {
+					found = false
+					break
+				}
+			}
+			// if the PathElem are bigger than the previously found this is a better match
+			if found && len(r.GetResourcePath().GetElem()) > minLength {
+				resMatch = r
+				minLength = len(r.GetResourcePath().GetElem())
+			}
+		}
+	}
+
+	if resMatch.Path != nil {
+		return resMatch, true
+	}
+	return resMatch, false
+}
+
+func (g *Generator) ifExcluded(path gnmi.Path, excludePaths []*gnmi.Path) bool {
+	for _, exclPath := range excludePaths {
+		fmt.Printf("Excluded Path : %s\n", *g.parser.GnmiPathToXPath(exclPath, true))
+		// if the length of the path is less than the exclude path there is no exclusion
+		if len(path.GetElem()) >= len(exclPath.GetElem()) {
+			found := false
+			for i, exlPathElem := range exclPath.GetElem() {
+				if exlPathElem.GetName() != path.GetElem()[i].GetName() {
+					found = false
+					break
+				}
+				found = true
+			}
+			// when all the PathElem matches this path of the tree is excluded
+			if found {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// IsResourcesInit checks if the resource is part of the resource table and if no excludes exist
 func (g *Generator) DoesResourceMatch(path gnmi.Path) (*resource.Resource, bool) {
 	//fmt.Printf("Path: %s\n", *parser.GnmiPathToXPath(path))
-	if r, ok := g.FindBestMatch(path); ok {
+	if r, ok := g.FindBestMatchNew(path); ok {
 		//fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
+		// check excludes
+		if g.ifExcluded(path, r.Excludes) {
+			return r, false
+		}
 		return r, true
 
 	}
@@ -62,12 +121,11 @@ func (g *Generator) DoesResourceMatch(path gnmi.Path) (*resource.Resource, bool)
 
 func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang.Entry) error {
 	resPath += filepath.Join("/", e.Name)
-	//fmt.Printf("resource path1: %s \n", resPath)
 	dynPath.Elem = append(dynPath.Elem, (*gnmi.PathElem)(g.parser.CreatePathElem(e)))
 	//fmt.Printf("resource path2: %s \n", *parser.GnmiPathToXPath(&path, false))
 
 	if r, ok := g.DoesResourceMatch(dynPath); ok {
-		//fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
+		fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
 		switch {
 		case e.RPC != nil:
 		case e.ReadOnly():
@@ -88,6 +146,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 			// Leaf processing
 			if e.Kind.String() == "Leaf" {
 				fmt.Printf("Leaf Name: %s, ResPath: %s \n", e.Name, resPath)
+				fmt.Printf("Entry: Name: %s, NameSpace: %#v\n", e.Name, e)
 				// add entry to the container
 				cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, nil))
 				localPath, remotePath, local := g.parser.ProcessLeafRefGnmi(e, resPath, r.GetAbsoluteGnmiActualResourcePath())

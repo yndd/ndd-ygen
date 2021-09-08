@@ -203,6 +203,10 @@ func NewGenerator(opts ...Option) (*Generator, error) {
 	return g, nil
 }
 
+func (g *Generator) GetEntries() []*yang.Entry{
+	return g.Entries
+}
+
 func (g *Generator) ShowConfiguration() {
 	log := g.log.WithValues("API Group", g.Config.ApiGroup,
 		"Version", g.Config.Version,
