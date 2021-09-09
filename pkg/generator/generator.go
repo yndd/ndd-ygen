@@ -203,7 +203,7 @@ func NewGenerator(opts ...Option) (*Generator, error) {
 	return g, nil
 }
 
-func (g *Generator) GetEntries() []*yang.Entry{
+func (g *Generator) GetEntries() []*yang.Entry {
 	return g.Entries
 }
 
@@ -354,7 +354,7 @@ func (g *Generator) Run() error {
 		path := gnmi.Path{
 			Elem: make([]*gnmi.PathElem, 0),
 		}
-		if err := g.ResourceGenerator("", path, e); err != nil {
+		if err := g.ResourceGenerator("", path, e, false); err != nil {
 			return err
 		}
 	}

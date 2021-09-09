@@ -74,9 +74,11 @@ func (g *Generator) FindBestMatchNew(inputPath gnmi.Path) (*resource.Resource, b
 				resMatch = r
 				minLength = len(r.GetAbsoluteGnmiPath().GetElem())
 			}
-			if strings.Contains(*g.parser.GnmiPathToXPath(&inputPath, false), "/nokia-conf/configure/router/ospf") {
-				fmt.Printf("FindBestMatchNew: Resource Path: %s, xpath: %s, length: %d, found: %t\n", *g.parser.GnmiPathToXPath(r.GetAbsoluteGnmiPath(), false), *g.parser.GnmiPathToXPath(&inputPath, false), minLength, found)
-			}
+			/*
+				if strings.Contains(*g.parser.GnmiPathToXPath(&inputPath, false), "/nokia-conf/configure/router/ospf") {
+					fmt.Printf("FindBestMatchNew: Resource Path: %s, xpath: %s, length: %d, found: %t\n", *g.parser.GnmiPathToXPath(r.GetAbsoluteGnmiPath(), false), *g.parser.GnmiPathToXPath(&inputPath, false), minLength, found)
+				}
+			*/
 		}
 	}
 
@@ -123,86 +125,93 @@ func (g *Generator) DoesResourceMatch(path gnmi.Path) (*resource.Resource, bool)
 	return nil, false
 }
 
-func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang.Entry) error {
-	resPath += filepath.Join("/", e.Name)
-	dynPath.Elem = append(dynPath.Elem, (*gnmi.PathElem)(g.parser.CreatePathElem(e)))
-	//fmt.Printf("resource path2: %s \n", *parser.GnmiPathToXPath(&path, false))
+func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang.Entry, choice bool) error {
 
-	if r, ok := g.DoesResourceMatch(dynPath); ok {
-		//fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
-		switch {
-		case e.RPC != nil:
-		case e.ReadOnly():
-		default: // this is a RW config element in yang
-			// find the containerPointer
-			// we look at the level delta from the root of the resource -> newLevel
-			// newLevel = 0 is special since it is the root of the container
-			// newLevel = 0 since there is no container yet we cannot find the container Pointer, since it is not created so far
-			newLevel := strings.Count(resPath, "/") - strings.Count(*r.GetAbsoluteXPathWithoutKey(), "/")
-			var cPtr *container.Container
-			if newLevel > 0 {
-				r.ContainerLevel = newLevel
+	// only add the pathElem this yang entry is not a choice entry
+	// e.IsChoice() represents that the current entry is a choice -> we can skip the processing
+	// choice means the previous yang entry was a choice so we need to skip one more round in processing
+	if !e.IsChoice() {
+		if !choice {
+			resPath += filepath.Join("/", e.Name)
+			dynPath.Elem = append(dynPath.Elem, (*gnmi.PathElem)(g.parser.CreatePathElem(e)))
+			//fmt.Printf("resource path2: %s \n", *parser.GnmiPathToXPath(&path, false))
 
-				cPtr = r.ContainerLevelKeys[newLevel-1][len(r.ContainerLevelKeys[newLevel-1])-1]
-			}
-			fmt.Printf("xpath: %s, resPath: %s, level: %d\n", *r.GetAbsoluteXPathWithoutKey(), resPath, r.ContainerLevel)
+			if r, ok := g.DoesResourceMatch(dynPath); ok {
+				//fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
+				switch {
+				case e.RPC != nil:
+				case e.ReadOnly():
+				default: // this is a RW config element in yang
+					// find the containerPointer
+					// we look at the level delta from the root of the resource -> newLevel
+					// newLevel = 0 is special since it is the root of the container
+					// newLevel = 0 since there is no container yet we cannot find the container Pointer, since it is not created so far
+					newLevel := strings.Count(resPath, "/") - strings.Count(*r.GetAbsoluteXPathWithoutKey(), "/")
+					var cPtr *container.Container
+					if newLevel > 0 {
+						r.ContainerLevel = newLevel
 
-			// Leaf processing
-			if e.Kind.String() == "Leaf" {
-				//fmt.Printf("Leaf Name: %s, ResPath: %s \n", e.Name, resPath)
-				//fmt.Printf("Entry: Name: %s, NameSpace: %#v\n", e.Name, e)
-				// add entry to the container
-				cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, nil))
-				localPath, remotePath, local := g.parser.ProcessLeafRefGnmi(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
-				if localPath != nil {
-					// validate if the leafrefs is a local leafref or an externaal leafref
-					if local {
-						// local leafref
-						r.AddLocalLeafRef(localPath, remotePath)
-					} else {
-						// external leafref
-						r.AddExternalLeafRef(localPath, remotePath)
+						cPtr = r.ContainerLevelKeys[newLevel-1][len(r.ContainerLevelKeys[newLevel-1])-1]
 					}
-				}
-			} else { // List processing with or without a key
-				//fmt.Printf("List Name: %s, ResPath: %s \n", e.Name, resPath)
-				// newLevel = 0 is special since we have to initialize the container
-				// for newLevl = 0 we do not have to rely on the cPtr, since there is no cPtr initialized yet
-				// for newLevl = 0 we dont create an entry in the container but we create a root container entry
-				if newLevel == 0 {
-					// Allocate a new actual path in the resource
-					r.ActualPath = &gnmi.Path{
-						Elem: make([]*gnmi.PathElem, 0),
-					}
-					// append the entry to the actual path of the reosurce
-					r.ActualPath.Elem = append(r.ActualPath.Elem, g.parser.CreatePathElem(e))
-					// create a new container and apply to the root of the resource
-					r.Container = container.NewContainer(e.Name, nil)
-					// r.Container.Entries = append(r.Container.Entries, parser.CreateContainerEntry(e, nil, nil))
-					// append the container Ptr to the back of the list, to track the used container Pointers per level
-					// newLevel =0
-					r.SetRootContainerEntry(g.parser.CreateContainerEntry(e, nil, nil))
-					r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
-					r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], r.Container)
-					r.ContainerList = append(r.ContainerList, r.Container)
+					fmt.Printf("xpath: %s, resPath: %s, level: %d\n", *r.GetAbsoluteXPathWithoutKey(), resPath, r.ContainerLevel)
 
-				} else {
-					if !e.IsChoice() {
-						// append the entry to the actual path of the reosurce
-						r.ActualPath.Elem = append(r.ActualPath.Elem, g.parser.CreatePathElem(e))
-						// create a new container for the next iteration
-						c := container.NewContainer(e.Name, cPtr)
-						if newLevel == 1 {
-							r.RootContainerEntry.Next = c
+					// Leaf processing
+					if e.Kind.String() == "Leaf" {
+						//fmt.Printf("Leaf Name: %s, ResPath: %s \n", e.Name, resPath)
+						//fmt.Printf("Entry: Name: %s, NameSpace: %#v\n", e.Name, e)
+						// add entry to the container
+						cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, nil))
+						localPath, remotePath, local := g.parser.ProcessLeafRefGnmi(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
+						if localPath != nil {
+							// validate if the leafrefs is a local leafref or an externaal leafref
+							if local {
+								// local leafref
+								r.AddLocalLeafRef(localPath, remotePath)
+							} else {
+								// external leafref
+								r.AddExternalLeafRef(localPath, remotePath)
+							}
 						}
-						// allocate container entry to the original container Pointer and append to the container entry list
-						// the next pointer of the entry points to the new container
-						cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, c, cPtr))
-						// append the container Ptr to the back of the list, to track the used container Pointers per level
-						// initialize the level
-						r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
-						r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], c)
-						r.ContainerList = append(r.ContainerList, c)
+					} else { // List processing with or without a key
+						//fmt.Printf("List Name: %s, ResPath: %s \n", e.Name, resPath)
+						// newLevel = 0 is special since we have to initialize the container
+						// for newLevl = 0 we do not have to rely on the cPtr, since there is no cPtr initialized yet
+						// for newLevl = 0 we dont create an entry in the container but we create a root container entry
+						if newLevel == 0 {
+							// Allocate a new actual path in the resource
+							r.ActualPath = &gnmi.Path{
+								Elem: make([]*gnmi.PathElem, 0),
+							}
+							// append the entry to the actual path of the reosurce
+							r.ActualPath.Elem = append(r.ActualPath.Elem, g.parser.CreatePathElem(e))
+							// create a new container and apply to the root of the resource
+							r.Container = container.NewContainer(e.Name, nil)
+							// r.Container.Entries = append(r.Container.Entries, parser.CreateContainerEntry(e, nil, nil))
+							// append the container Ptr to the back of the list, to track the used container Pointers per level
+							// newLevel =0
+							r.SetRootContainerEntry(g.parser.CreateContainerEntry(e, nil, nil))
+							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
+							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], r.Container)
+							r.ContainerList = append(r.ContainerList, r.Container)
+
+						} else {
+							// append the entry to the actual path of the resource
+							r.ActualPath.Elem = append(r.ActualPath.Elem, g.parser.CreatePathElem(e))
+							// create a new container for the next iteration
+							c := container.NewContainer(e.Name, cPtr)
+							if newLevel == 1 {
+								r.RootContainerEntry.Next = c
+							}
+							// allocate container entry to the original container Pointer and append to the container entry list
+							// the next pointer of the entry points to the new container
+							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, c, cPtr))
+							// append the container Ptr to the back of the list, to track the used container Pointers per level
+							// initialize the level
+							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
+							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], c)
+							r.ContainerList = append(r.ContainerList, c)
+
+						}
 					}
 				}
 			}
@@ -215,7 +224,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 	}
 	sort.Strings(names)
 	for _, k := range names {
-		g.ResourceGenerator(resPath, dynPath, e.Dir[k])
+		g.ResourceGenerator(resPath, dynPath, e.Dir[k], e.IsChoice())
 	}
 	return nil
 }
