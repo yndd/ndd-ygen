@@ -28,3 +28,4 @@ data
 out
 *.tst
 *.go2
+out.txt

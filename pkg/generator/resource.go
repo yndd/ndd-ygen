@@ -187,21 +187,23 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 					r.ContainerList = append(r.ContainerList, r.Container)
 
 				} else {
-					// append the entry to the actual path of the reosurce
-					r.ActualPath.Elem = append(r.ActualPath.Elem, g.parser.CreatePathElem(e))
-					// create a new container for the next iteration
-					c := container.NewContainer(e.Name, cPtr)
-					if newLevel == 1 {
-						r.RootContainerEntry.Next = c
+					if !e.IsChoice() {
+						// append the entry to the actual path of the reosurce
+						r.ActualPath.Elem = append(r.ActualPath.Elem, g.parser.CreatePathElem(e))
+						// create a new container for the next iteration
+						c := container.NewContainer(e.Name, cPtr)
+						if newLevel == 1 {
+							r.RootContainerEntry.Next = c
+						}
+						// allocate container entry to the original container Pointer and append to the container entry list
+						// the next pointer of the entry points to the new container
+						cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, c, cPtr))
+						// append the container Ptr to the back of the list, to track the used container Pointers per level
+						// initialize the level
+						r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
+						r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], c)
+						r.ContainerList = append(r.ContainerList, c)
 					}
-					// allocate container entry to the original container Pointer and append to the container entry list
-					// the next pointer of the entry points to the new container
-					cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, c, cPtr))
-					// append the container Ptr to the back of the list, to track the used container Pointers per level
-					// initialize the level
-					r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
-					r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], c)
-					r.ContainerList = append(r.ContainerList, c)
 				}
 			}
 		}
