@@ -354,7 +354,7 @@ func (g *Generator) Run() error {
 		path := gnmi.Path{
 			Elem: make([]*gnmi.PathElem, 0),
 		}
-		if err := g.ResourceGenerator("", path, e, false); err != nil {
+		if err := g.ResourceGenerator("", path, e, false, ""); err != nil {
 			return err
 		}
 	}

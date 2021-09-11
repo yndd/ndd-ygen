@@ -125,7 +125,7 @@ func (g *Generator) DoesResourceMatch(path gnmi.Path) (*resource.Resource, bool)
 	return nil, false
 }
 
-func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang.Entry, choice bool) error {
+func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang.Entry, choice bool, containerKey string) error {
 
 	// only add the pathElem this yang entry is not a choice entry
 	// e.IsChoice() represents that the current entry is a choice -> we can skip the processing
@@ -159,7 +159,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 					//fmt.Printf("Leaf Name: %s, ResPath: %s \n", e.Name, resPath)
 					//fmt.Printf("Entry: Name: %s, NameSpace: %#v\n", e.Name, e)
 					// add entry to the container
-					cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, nil))
+					cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, nil, containerKey))
 					localPath, remotePath, local := g.parser.ProcessLeafRefGnmi(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
 					if localPath != nil {
 						// validate if the leafrefs is a local leafref or an externaal leafref
@@ -188,7 +188,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 						// r.Container.Entries = append(r.Container.Entries, parser.CreateContainerEntry(e, nil, nil))
 						// append the container Ptr to the back of the list, to track the used container Pointers per level
 						// newLevel =0
-						r.SetRootContainerEntry(g.parser.CreateContainerEntry(e, nil, nil))
+						r.SetRootContainerEntry(g.parser.CreateContainerEntry(e, nil, nil, containerKey))
 						r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
 						r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], r.Container)
 						r.ContainerList = append(r.ContainerList, r.Container)
@@ -203,7 +203,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 						}
 						// allocate container entry to the original container Pointer and append to the container entry list
 						// the next pointer of the entry points to the new container
-						cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, c, cPtr))
+						cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, c, cPtr, containerKey))
 						// append the container Ptr to the back of the list, to track the used container Pointers per level
 						// initialize the level
 						r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
@@ -213,7 +213,6 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 					}
 				}
 			}
-
 		}
 	}
 	// handles the recursive analysis of the yang tree
@@ -223,7 +222,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 	}
 	sort.Strings(names)
 	for _, k := range names {
-		g.ResourceGenerator(resPath, dynPath, e.Dir[k], e.IsChoice())
+		g.ResourceGenerator(resPath, dynPath, e.Dir[k], e.IsChoice(), e.Key)
 	}
 	return nil
 }
