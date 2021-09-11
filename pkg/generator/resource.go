@@ -222,6 +222,9 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 	}
 	sort.Strings(names)
 	for _, k := range names {
+		// e.key is supplied to the next iteration as this identifies the key that is used at the containerlevel
+		// the key is resolved with the name in the next level resolution and this is how we can identify
+		//  if a entry (which is the key name) is mandatory or not
 		g.ResourceGenerator(resPath, dynPath, e.Dir[k], e.IsChoice(), e.Key)
 	}
 	return nil
