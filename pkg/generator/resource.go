@@ -130,7 +130,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 	// only add the pathElem this yang entry is not a choice entry
 	// e.IsChoice() represents that the current entry is a choice -> we can skip the processing
 	// choice means the previous yang entry was a choice so we need to skip one more round in processing
-	if !e.IsChoice() {
+	if !e.IsChoice() || choice {
 		resPath += filepath.Join("/", e.Name)
 		dynPath.Elem = append(dynPath.Elem, (*gnmi.PathElem)(g.parser.CreatePathElem(e)))
 		//fmt.Printf("resource path2: %s \n", *parser.GnmiPathToXPath(&path, false))
