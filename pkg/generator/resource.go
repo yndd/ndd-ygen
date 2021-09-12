@@ -128,8 +128,8 @@ func (g *Generator) DoesResourceMatch(path gnmi.Path) (*resource.Resource, bool)
 func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang.Entry, choice bool, containerKey string) error {
 
 	// only add the pathElem this yang entry is not a choice entry
-	// e.IsChoice() represents that the current entry is a choice -> we can skip the processing
-	// choice means the previous yang entry was a choice so we need to skip one more round in processing
+	// 1. e.IsChoice() represents that the current entry is a choice -> we can skip the processing
+	// 2. choice means the previous yang entry was a choice so we need to skip one more round in processing
 	if !e.IsChoice() || choice {
 		resPath += filepath.Join("/", e.Name)
 		dynPath.Elem = append(dynPath.Elem, (*gnmi.PathElem)(g.parser.CreatePathElem(e)))
@@ -158,7 +158,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 				if e.Kind.String() == "Leaf" {
 					//fmt.Printf("Leaf Name: %s, ResPath: %s \n", e.Name, resPath)
 					//fmt.Printf("Entry: Name: %s, NameSpace: %#v\n", e.Name, e)
-					// add entry to the container
+					// add entry to the container, containerKey allows to see if a 
 					cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, nil, containerKey))
 					localPath, remotePath, local := g.parser.ProcessLeafRefGnmi(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
 					if localPath != nil {
@@ -222,9 +222,10 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 	}
 	sort.Strings(names)
 	for _, k := range names {
-		// e.key is supplied to the next iteration as this identifies the key that is used at the containerlevel
+		// 1/ the choice is supplied to the next level in order to ignore 1 more path from the tree
+		// 2. e.key is supplied to the next iteration as this identifies the key that is used at the containerlevel
 		// the key is resolved with the name in the next level resolution and this is how we can identify
-		//  if a entry (which is the key name) is mandatory or not
+		// if a entry (which is the key name) is mandatory or not
 		g.ResourceGenerator(resPath, dynPath, e.Dir[k], e.IsChoice(), e.Key)
 	}
 	return nil
