@@ -134,7 +134,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 		if !choice {
 			resPath += filepath.Join("/", e.Name)
 			dynPath.Elem = append(dynPath.Elem, (*gnmi.PathElem)(g.parser.CreatePathElem(e)))
-			//fmt.Printf("resource path2: %s \n", *parser.GnmiPathToXPath(&path, false))
+			fmt.Printf("resource path: %s \n", *g.parser.GnmiPathToXPath(&dynPath, false))
 
 			if r, ok := g.DoesResourceMatch(dynPath); ok {
 				//fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())

@@ -17,6 +17,8 @@ limitations under the License.
 package generator
 
 import (
+	"fmt"
+
 	"github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/stoewer/go-strcase"
 	"github.com/yndd/ndd-yang/pkg/container"
@@ -27,6 +29,7 @@ import (
 func (g *Generator) Render() error {
 	// Render the data
 	for _, r := range g.Resources {
+		fmt.Printf("Resource: %s, %#v\n", r.GetResourceNameWithPrefix(g.Config.Prefix), r.GetRootContainerEntry().GetKey())
 		r.AssignFileName(g.Config.Prefix, "_types.go")
 		if err := r.CreateFile(g.Config.OutputDir, "api", g.Config.Version); err != nil {
 			return err
