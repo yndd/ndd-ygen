@@ -96,6 +96,12 @@ func WithLogging(l logging.Logger) Option {
 	}
 }
 
+func WithParser(l logging.Logger) Option {
+	return func(g *Generator) {
+		g.parser = parser.NewParser(parser.WithLogger(l))
+	}
+}
+
 func WithYangImportDirs(d []string) Option {
 	return func(g *Generator) {
 		g.Config.YangImportDirs = d
