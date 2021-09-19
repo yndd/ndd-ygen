@@ -22,7 +22,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"text/template"
 
 	"github.com/openconfig/gnmi/proto/gnmi"
@@ -251,7 +250,7 @@ func (g *Generator) InitializeResourcesNew(pd map[string]PathDetails, pp string,
 	if g.Config.ResourceMapAll {
 		for path := range pd {
 			opts := []resource.Option{
-				resource.WithXPath("/" + strings.Split(path, "/")[1]),
+				resource.WithXPath(path),
 			}
 			g.Resources = append(g.Resources, resource.NewResource(opts...))
 			return nil
