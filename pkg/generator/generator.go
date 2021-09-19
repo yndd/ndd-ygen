@@ -283,6 +283,9 @@ func (g *Generator) InitializeResourcesNew(pd map[string]PathDetails, pp string,
 		if pathdetails.Hierarchy != nil {
 			// run the procedure in a hierarchical way, offset is 0 since the resource does not have
 			// a duplicate element in the path
+			for hpath := range pathdetails.Hierarchy {
+				g.Resources[len(g.Resources)-1].AppendHierElements(strings.Split(hpath, "/")[1])
+			}
 			if err := g.InitializeResourcesNew(pathdetails.Hierarchy, path, 0); err != nil {
 				return err
 			}
