@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"text/template"
 
 	"github.com/openconfig/gnmi/proto/gnmi"
@@ -61,6 +62,7 @@ type GeneratorConfig struct {
 	YangModuleDirs []string // the YANG resource files
 
 	ResourceMapInputFile string // the resource input file
+	ResourceMapAll       bool   // resource map all
 	OutputDir            string // the directory where the resource should be written to
 	PackageName          string // the go package we want to geenrate
 	Version              string // the version of the api we generate for k8s
@@ -109,6 +111,12 @@ func WithYangModuleDirs(d []string) Option {
 func WithResourceMapInputFile(s string) Option {
 	return func(g *Generator) {
 		g.Config.ResourceMapInputFile = s
+	}
+}
+
+func WithResourceMapAll(a bool) Option {
+	return func(g *Generator) {
+		g.Config.ResourceMapAll = a
 	}
 }
 
@@ -237,6 +245,18 @@ func (g *Generator) FindResource(p string) (*resource.Resource, error) {
 // A resource contains the relative information of the resource.
 // To DependsOn allows you to reference parent resources
 func (g *Generator) InitializeResourcesNew(pd map[string]PathDetails, pp string, offset int) error {
+	// we just need to generic resourcePath and we dont need to process the individual paths
+	// the first entry is sufficient
+	// we just take the first element of the path and we are done
+	if g.Config.ResourceMapAll {
+		for path := range pd {
+			opts := []resource.Option{
+				resource.WithXPath("/" + strings.Split(path, "/")[1]),
+			}
+			g.Resources = append(g.Resources, resource.NewResource(opts...))
+			return nil
+		}
+	}
 	for path, pathdetails := range pd {
 		//g.log.Debug("Path information", "Path", path, "parent path", pp)
 		opts := []resource.Option{
