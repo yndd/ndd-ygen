@@ -46,7 +46,7 @@ const (
 )
 
 type Generator struct {
-	parser *parser.Parser
+	Parser *parser.Parser
 	Config *GeneratorConfig // holds the configuration for the generator
 	//ResourceConfig  map[string]*ResourceDetails // holds the configuration of the resources we should generate
 	Resources   []*resource.Resource // holds the resources that are being generated
@@ -98,7 +98,7 @@ func WithLogging(l logging.Logger) Option {
 
 func WithParser(l logging.Logger) Option {
 	return func(g *Generator) {
-		g.parser = parser.NewParser(parser.WithLogger(l))
+		g.Parser = parser.NewParser(parser.WithLogger(l))
 	}
 }
 
@@ -165,7 +165,7 @@ func WithLocalRender(b bool) Option {
 // NewYangGoCodeGenerator function defines a new generator
 func NewGenerator(opts ...Option) (*Generator, error) {
 	g := &Generator{
-		parser: parser.NewParser(),
+		Parser: parser.NewParser(),
 		Config: new(GeneratorConfig),
 		//ResourceConfig:  make(map[string]*ResourceDetails),
 		Resources: make([]*resource.Resource, 0),
@@ -239,7 +239,7 @@ func (g *Generator) FindResource(p string) (*resource.Resource, error) {
 	//fmt.Printf("find resource\n")
 	for _, r := range g.Resources {
 		//fmt.Printf("find resource path %s %s\n", p, *parser.GnmiPathToXPath(r.Path))
-		if p == *g.parser.GnmiPathToXPath(r.Path, false) {
+		if p == *g.Parser.GnmiPathToXPath(r.Path, false) {
 			return r, nil
 		}
 	}

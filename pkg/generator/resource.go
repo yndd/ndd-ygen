@@ -34,7 +34,7 @@ func (g *Generator) FindBestMatch(path gnmi.Path) (*resource.Resource, bool) {
 	resMatch := &resource.Resource{}
 	found := false
 	for _, r := range g.Resources {
-		if strings.Contains(*g.parser.GnmiPathToXPath(&path, false), *r.GetAbsoluteXPath()) {
+		if strings.Contains(*g.Parser.GnmiPathToXPath(&path, false), *r.GetAbsoluteXPath()) {
 			// find the string which matches the most
 			// should be the last match normally since we added them
 			// to the list from root to lower hierarchy
@@ -133,8 +133,8 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 	if !e.IsChoice() {
 		if !choice {
 			resPath += filepath.Join("/", e.Name)
-			dynPath.Elem = append(dynPath.Elem, (*gnmi.PathElem)(g.parser.CreatePathElem(e)))
-			fmt.Printf("resource path: %s \n", *g.parser.GnmiPathToXPath(&dynPath, false))
+			dynPath.Elem = append(dynPath.Elem, (*gnmi.PathElem)(g.Parser.CreatePathElem(e)))
+			fmt.Printf("resource path: %s \n", *g.Parser.GnmiPathToXPath(&dynPath, false))
 
 			if r, ok := g.DoesResourceMatch(dynPath); ok {
 				//fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
@@ -160,8 +160,8 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 						//fmt.Printf("Leaf Name: %s, ResPath: %s \n", e.Name, resPath)
 						//fmt.Printf("Entry: Name: %s, NameSpace: %#v\n", e.Name, e)
 						// add entry to the container, containerKey allows to see if a
-						cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, nil, containerKey))
-						localPath, remotePath, local := g.parser.ProcessLeafRefGnmi(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
+						cPtr.Entries = append(cPtr.Entries, g.Parser.CreateContainerEntry(e, nil, nil, containerKey))
+						localPath, remotePath, local := g.Parser.ProcessLeafRefGnmi(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
 						if localPath != nil {
 							// validate if the leafrefs is a local leafref or an externaal leafref
 							if local {
@@ -183,20 +183,20 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 								Elem: make([]*gnmi.PathElem, 0),
 							}
 							// append the entry to the actual path of the reosurce
-							r.ActualPath.Elem = append(r.ActualPath.Elem, g.parser.CreatePathElem(e))
+							r.ActualPath.Elem = append(r.ActualPath.Elem, g.Parser.CreatePathElem(e))
 							// create a new container and apply to the root of the resource
 							r.Container = container.NewContainer(e.Name, nil)
 							// r.Container.Entries = append(r.Container.Entries, parser.CreateContainerEntry(e, nil, nil))
 							// append the container Ptr to the back of the list, to track the used container Pointers per level
 							// newLevel =0
-							r.SetRootContainerEntry(g.parser.CreateContainerEntry(e, nil, nil, containerKey))
+							r.SetRootContainerEntry(g.Parser.CreateContainerEntry(e, nil, nil, containerKey))
 							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
 							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], r.Container)
 							r.ContainerList = append(r.ContainerList, r.Container)
 
 						} else {
 							// append the entry to the actual path of the resource
-							r.ActualPath.Elem = append(r.ActualPath.Elem, g.parser.CreatePathElem(e))
+							r.ActualPath.Elem = append(r.ActualPath.Elem, g.Parser.CreatePathElem(e))
 							// create a new container for the next iteration
 							c := container.NewContainer(e.Name, cPtr)
 							if newLevel == 1 {
@@ -204,7 +204,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 							}
 							// allocate container entry to the original container Pointer and append to the container entry list
 							// the next pointer of the entry points to the new container
-							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, c, cPtr, containerKey))
+							cPtr.Entries = append(cPtr.Entries, g.Parser.CreateContainerEntry(e, c, cPtr, containerKey))
 							// append the container Ptr to the back of the list, to track the used container Pointers per level
 							// initialize the level
 							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
