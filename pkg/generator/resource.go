@@ -141,6 +141,11 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath gnmi.Path, e *yang
 				switch {
 				case e.RPC != nil:
 				case e.ReadOnly():
+					// when the resourcemapAll flag is true we also generate the read-only leafs
+					if !g.Config.ResourceMapAll {
+						break
+					}
+					fallthrough
 				default: // this is a RW config element in yang
 					// find the containerPointer
 					// we look at the level delta from the root of the resource -> newLevel
