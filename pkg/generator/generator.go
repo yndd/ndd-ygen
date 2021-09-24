@@ -275,6 +275,10 @@ func (g *Generator) InitializeResourcesNew(pd map[string]PathDetails, pp string,
 				return err
 			}
 			opts = append(opts, resource.WithDependsOn(r))
+			opts = append(opts, resource.WithModule(r.GetModule()))
+		} else {
+			// initialize the module if this is a parent resource
+			opts = append(opts, resource.WithModule(strings.Split(path, "/")[1]))
 		}
 		// exclude belongs to the previous resource and hence we have to
 		// append the exclude element info to the previous path
