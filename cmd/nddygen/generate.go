@@ -76,10 +76,14 @@ var generateCmd = &cobra.Command{
 			log.Debug("Error", "error", err)
 			return err
 		}
+
+		
 		if err := g.Render(); err != nil {
 			log.Debug("Error", "error", err)
 			return err
 		}
+
+		g.ShowActualPathPerResource()
 
 		return nil
 	},

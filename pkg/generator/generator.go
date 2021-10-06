@@ -202,7 +202,7 @@ func NewGenerator(opts ...Option) (*Generator, error) {
 	}
 
 	// initialize the resources from the YAML input file, we start at the root level using "/" path
-	if err := g.InitializeResourcesNew(c.Path, "/", 1); err != nil {
+	if err := g.InitializeResources(c.Path, "/", 1); err != nil {
 		return nil, errors.Wrap(err, errCannotInitializeResources)
 	}
 	// show the result of the processed resources
@@ -231,7 +231,20 @@ func (g *Generator) ShowConfiguration() {
 
 func (g *Generator) ShowResources() {
 	for i, r := range g.Resources {
-		fmt.Printf("Nbr: %d, Resource Path: %s, Exclude: %v\n", i, *r.GetAbsoluteXPath(), r.GetExcludeRelativeXPath())
+		if r.GetDependsOn() != nil {
+			fmt.Printf("Nbr: %d, Resource Path: %s, Exclude: %v, DependsOnPath: %v\n", i, *r.GetAbsoluteXPath(), r.GetExcludeRelativeXPath(), *g.Parser.GnmiPathToXPath(r.GetDependsOnPath(), false))
+		} else {
+			fmt.Printf("Nbr: %d, Resource Path: %s, Exclude: %v, DependsOn: %v\n", i, *r.GetAbsoluteXPath(), r.GetExcludeRelativeXPath(), r.GetDependsOn())
+		}
+	}
+}
+
+func (g *Generator) ShowActualPathPerResource() {
+	for _, r := range g.Resources {
+		fmt.Printf("Resource Path: %s\n", *r.GetAbsoluteXPath())
+		for _, pe := range r.GetActualGnmiFullPathWithKeys().GetElem() {
+			fmt.Printf("Path Element: PathElem Name: %s PathElem Key: %v\n", pe.GetName(), pe.GetKey())
+		}
 	}
 }
 
@@ -250,8 +263,9 @@ func (g *Generator) FindResource(p string) (*resource.Resource, error) {
 // The result is stored in the []*Resource list
 // A resource contains the relative information of the resource.
 // To DependsOn allows you to reference parent resources
-func (g *Generator) InitializeResourcesNew(pd map[string]PathDetails, pp string, offset int) error {
-	// we just need to generic resourcePath and we dont need to process the individual paths
+func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, offset int) error {
+	// when we want to generate the full resource e.g. for state use cases we just need
+	// the generic resourcePath and we dont need to process the individual paths in the resource file
 	// the first entry is sufficient
 	// we just take the first element of the path and we are done
 	if g.Config.ResourceMapAll {
@@ -265,19 +279,32 @@ func (g *Generator) InitializeResourcesNew(pd map[string]PathDetails, pp string,
 	}
 	for path, pathdetails := range pd {
 		//g.log.Debug("Path information", "Path", path, "parent path", pp)
-		opts := []resource.Option{
-			resource.WithXPath(path),
-		}
+		opts := []resource.Option{}
 		if pp != "/" {
 			// this is a hierarchical resource, find the hierarchical dependency
 			r, err := g.FindResource(pp)
 			if err != nil {
 				return err
 			}
+			//
+			split := strings.Split(path, "/")
+			// if the dependency path consists of multiple elements the dependency path
+			// needs to contain these elements, since the parent resource contains them
+			// we need this to find the keys, which are in the parent resource
+			dp := g.Parser.DeepCopyGnmiPath(r.Path)
+			if len(split) > 2 {
+				for i := 1; i < len(split)-1; i++ {
+					dp = g.Parser.AppendElemInGnmiPath(dp, split[i], []string{})
+				}
+			}
+			// the resource path is only consisting of the last element of the hierarchical path
+			opts = append(opts, resource.WithXPath("/" + split[len(split)-1]))
+			opts = append(opts, resource.WithDependsOnPath(dp))
 			opts = append(opts, resource.WithDependsOn(r))
 			opts = append(opts, resource.WithModule(r.GetModule()))
 		} else {
 			// initialize the module if this is a parent resource
+			opts = append(opts, resource.WithXPath(path))
 			opts = append(opts, resource.WithModule(strings.Split(path, "/")[1]))
 		}
 		// exclude belongs to the previous resource and hence we have to
@@ -296,7 +323,7 @@ func (g *Generator) InitializeResourcesNew(pd map[string]PathDetails, pp string,
 			for hpath := range pathdetails.Hierarchy {
 				g.Resources[len(g.Resources)-1].AppendHierElements(strings.Split(hpath, "/")[1])
 			}
-			if err := g.InitializeResourcesNew(pathdetails.Hierarchy, path, 0); err != nil {
+			if err := g.InitializeResources(pathdetails.Hierarchy, path, 0); err != nil {
 				return err
 			}
 		}
