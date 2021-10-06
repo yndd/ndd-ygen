@@ -236,6 +236,7 @@ func (g *Generator) ShowResources() {
 		} else {
 			fmt.Printf("Nbr: %d, Resource Path: %s, Exclude: %v, DependsOn: %v\n", i, *r.GetAbsoluteXPath(), r.GetExcludeRelativeXPath(), r.GetDependsOn())
 		}
+		fmt.Printf(" HierResourceElements: %v\n", r.GetHierResourceElements().GetHierResourceElements())
 	}
 }
 
@@ -298,7 +299,7 @@ func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, of
 				}
 			}
 			// the resource path is only consisting of the last element of the hierarchical path
-			opts = append(opts, resource.WithXPath("/" + split[len(split)-1]))
+			opts = append(opts, resource.WithXPath("/"+split[len(split)-1]))
 			opts = append(opts, resource.WithDependsOnPath(dp))
 			opts = append(opts, resource.WithDependsOn(r))
 			opts = append(opts, resource.WithModule(r.GetModule()))
@@ -321,7 +322,8 @@ func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, of
 			// run the procedure in a hierarchical way, offset is 0 since the resource does not have
 			// a duplicate element in the path
 			for hpath := range pathdetails.Hierarchy {
-				g.Resources[len(g.Resources)-1].AppendHierElements(strings.Split(hpath, "/")[1])
+				fmt.Printf("hpath: %s\n", hpath)
+				g.Resources[len(g.Resources)-1].GetHierResourceElement().AddHierResourceElement(hpath)
 			}
 			if err := g.InitializeResources(pathdetails.Hierarchy, path, 0); err != nil {
 				return err
