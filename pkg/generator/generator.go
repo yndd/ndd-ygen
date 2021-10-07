@@ -77,8 +77,9 @@ type ResourceYamlInput struct {
 
 // PathDetails struct
 type PathDetails struct {
-	Excludes  []string               `yaml:"excludes"`
-	Hierarchy map[string]PathDetails `yaml:"hierarchy"`
+	SubResources []string               `yaml:"sub-resources"`
+	Excludes     []string               `yaml:"excludes"`
+	Hierarchy    map[string]PathDetails `yaml:"hierarchy"`
 }
 
 // Option can be used to manipulate Options.
@@ -237,6 +238,9 @@ func (g *Generator) ShowResources() {
 			fmt.Printf("Nbr: %d, Resource Path: %s, Exclude: %v, DependsOn: %v\n", i, *r.GetAbsoluteXPath(), r.GetExcludeRelativeXPath(), r.GetDependsOn())
 		}
 		fmt.Printf(" HierResourceElements: %v\n", r.GetHierResourceElements().GetHierResourceElements())
+		for _, subres := range r.GetActualSubResources() {
+			fmt.Printf("  Subsresource: %s\n", *g.Parser.GnmiPathToXPath(subres, false))
+		}
 	}
 }
 
@@ -289,9 +293,10 @@ func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, of
 			}
 			//
 			split := strings.Split(path, "/")
-			// if the dependency path consists of multiple elements the dependency path
-			// needs to contain these elements, since the parent resource contains them
-			// we need this to find the keys, which are in the parent resource
+			// if the hierarchical path consists of multiple path only the last element of the
+			// hierarchical path is relevaant in the hierarchical context
+			// the other path elements reside in the parent resource and hence will be part of the
+			// dependency path
 			dp := g.Parser.DeepCopyGnmiPath(r.Path)
 			if len(split) > 2 {
 				for i := 1; i < len(split)-1; i++ {
@@ -300,12 +305,38 @@ func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, of
 			}
 			// the resource path is only consisting of the last element of the hierarchical path
 			opts = append(opts, resource.WithXPath("/"+split[len(split)-1]))
+			// add resource dependency with dependency path
 			opts = append(opts, resource.WithDependsOnPath(dp))
 			opts = append(opts, resource.WithDependsOn(r))
+			// add subresources
+			subResPaths := make([]*gnmi.Path, 0)
+			if len(pathdetails.SubResources) == 0 {
+				// no subresources exists -> initialize with the resource path
+				subResPaths = append(subResPaths, g.Parser.XpathToGnmiPath("/"+split[len(split)-1], 0))
+			}
+			for _, subres := range pathdetails.SubResources {
+				subResPaths = append(subResPaths, g.Parser.XpathToGnmiPath(filepath.Join("/"+split[len(split)-1], subres), 0))
+			}
+			opts = append(opts, resource.WithSubResources(subResPaths))
+			// add module
+			opts = append(opts, resource.WithModule(strings.Split(path, "/")[1]))
+			// add module
 			opts = append(opts, resource.WithModule(r.GetModule()))
 		} else {
 			// initialize the module if this is a parent resource
+			// add resourcepath
 			opts = append(opts, resource.WithXPath(path))
+			// add subresources
+			subResPaths := make([]*gnmi.Path, 0)
+			if len(pathdetails.SubResources) == 0 {
+				// no subresources exists -> initialize with the resource path
+				subResPaths = append(subResPaths, g.Parser.XpathToGnmiPath(path, 0))
+			}
+			for _, subres := range pathdetails.SubResources {
+				subResPaths = append(subResPaths, g.Parser.XpathToGnmiPath(filepath.Join(path, subres), 0))
+			}
+			opts = append(opts, resource.WithSubResources(subResPaths))
+			// add module
 			opts = append(opts, resource.WithModule(strings.Split(path, "/")[1]))
 		}
 		// exclude belongs to the previous resource and hence we have to
