@@ -200,7 +200,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 								r.AddExternalLeafRef(localPath, remotePath)
 							}
 						}
-						localPath, remotePath, _ = yparser.ProcessLeafRefGnmi(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
+						localPath, remotePath, _ = yparser.ProcessLeafRef(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
 						if localPath != nil {
 							// validate if the leafrefs is a local leafref or an external leafref
 							fmt.Printf("LocalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
