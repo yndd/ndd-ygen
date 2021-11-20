@@ -1,0 +1,230 @@
+{{- $name := .Name}}
+{{- $fullName := .FullName}}
+{{- $keys := .Keys}}
+{{- $children := .Children}}
+{{- $resourceBoundary := .ResourceBoundary}}
+{{- $leafRefs := .LeafRefs}}
+package yangschema
+
+import (
+    "fmt"
+    
+    "github.com/yndd/ndd-yang/pkg/yentry"
+    "github.com/openconfig/gnmi/proto/gnmi"
+    "github.com/yndd/ndd-runtime/pkg/logging"
+    "github.com/yndd/ndd-yang/pkg/yparser"
+    "github.com/yndd/ndd-yang/pkg/leafref"
+)
+
+type {{$fullName | toLowerCamelCase}} struct {
+	*yentry.Entry
+}
+
+{{- if eq $fullName "root" }} 
+func Init{{$fullName | toUpperCamelCase}}(p yentry.Handler, opts ...yentry.HandlerOption) yentry.Handler {
+{{- else }}
+func init{{$fullName | toUpperCamelCase}}(p yentry.Handler, opts ...yentry.HandlerOption) yentry.Handler {
+{{- end }}
+	children := map[string]yentry.HandleInitFunc{
+    {{- range $index, $child := $children}}
+    {{- if eq $fullName "root" }}
+        "{{$child}}": init{{$child | toUpperCamelCase}},
+    {{- else}}
+		"{{$child}}": init{{$fullName | toUpperCamelCase}}{{$child | toUpperCamelCase}},
+    {{- end}}
+    {{- end}}
+	}
+    e := &yentry.Entry{
+        Name: "{{$name}}",
+        Key: []string{
+        {{- range $index, $key := $keys}}
+            "{{$key}}",
+        {{- end}}
+        },
+        Parent: p,
+        Children: make(map[string]yentry.Handler),
+        ResourceBoundary: {{$resourceBoundary}},
+        LeafRefs: []*leafref.LeafRef{
+            {{- range $index, $leafref := $leafRefs}}
+            {
+                LocalPath: &gnmi.Path{
+                    Elem: []*gnmi.PathElem{
+                {{- range $idx, $element := $leafref.LocalPath.Elem}}
+                        {Name: "{{$element.Name}}"},
+                {{- end}}
+                    },
+                },
+                RemotePath: &gnmi.Path{
+                    Elem: []*gnmi.PathElem{
+                {{- range $idx, $element := $leafref.RemotePath.Elem}}
+                {{- if eq ($element.Key | len) 0 }}
+                        {Name: "{{$element.Name}}"},
+                {{- else }}
+                {{- range $keyname, $keyvalue := $element.Key }}
+                        {Name: "{{$element.Name}}", Key: map[string]string{"{{$keyname}}": ""}},
+                {{- end }}
+                {{- end }}
+                {{- end }}
+                    },
+                },
+            },
+            {{- end}}
+        },
+    }
+    r := &{{$fullName | toLowerCamelCase}}{e}
+
+    for _, opt := range opts {
+		opt(r)
+	}
+
+    for name, initFunc := range children {
+        r.Children[name] = initFunc(r, yentry.WithLogging(r.Log))
+    }
+	return r
+}
+
+func (r *{{$fullName | toLowerCamelCase}})WithLogging(log logging.Logger) {
+	r.Log = log
+}
+
+func (r *{{$fullName | toLowerCamelCase}}) GetName() string {
+    return r.Name
+}
+
+func (r *{{$fullName | toLowerCamelCase}}) GetKey() []string {
+    return r.Key
+}
+
+func (r *{{$fullName | toLowerCamelCase}}) GetKeys(p *gnmi.Path) []string {
+    r.Log.Debug("Yangschema GetKeys", "Path", yparser.GnmiPath2XPath(p, true))
+    if len(p.GetElem()) != 0 {
+        return r.Children[p.GetElem()[0].GetName()].GetKeys(&gnmi.Path{Elem: p.GetElem()[1:]})
+    } else {
+        return r.GetKey()
+    }
+}
+
+func (r *{{$fullName | toLowerCamelCase}}) GetResourceBoundary() bool {
+    return r.ResourceBoundary
+}
+
+// GetHierarchicalResources returns the hierarchical paths of a resource
+// 1. p is the path of the root resource
+// 2. cp is the current path that extends to find the hierarchical resources once p is found
+// 3. hierPaths contains the hierarchical resources
+func (r *{{$fullName | toLowerCamelCase}}) GetHierarchicalResourcesRemote(p *gnmi.Path, cp *gnmi.Path, hierPaths []*gnmi.Path) []*gnmi.Path {
+	if len(p.GetElem()) != 0 {
+		// continue finding the root of the resource we want to get the data from
+		hierPaths = r.Children[p.GetElem()[0].GetName()].GetHierarchicalResourcesRemote(&gnmi.Path{Elem: p.GetElem()[1:]}, cp, hierPaths)
+	} else {
+		// we execute on a remote resource otherwise you collect the local information
+		for _, h := range r.Children {
+			newcp := &gnmi.Path{Elem: append(cp.GetElem(), &gnmi.PathElem{Name: h.GetName()})}
+			if h.GetResourceBoundary() {
+				hierPaths = append(hierPaths, newcp)
+			} else {
+				hierPaths = h.GetHierarchicalResourcesRemote(p, newcp, hierPaths)
+			}
+		}
+	}
+	return hierPaths
+}
+
+// GetHierarchicalResources returns the hierarchical paths of a resource
+// 0. root is to know the first resource that is actually the root of the path
+// 1. p is the path of the root resource
+// 2. cp is the current path that extends to find the hierarchical resources once p is found
+// 3. hierPaths contains the hierarchical resources
+func (r *{{$fullName | toLowerCamelCase}}) GetHierarchicalResourcesLocal(root bool, p *gnmi.Path, cp *gnmi.Path, hierPaths []*gnmi.Path) []*gnmi.Path {
+	if len(p.GetElem()) != 0 {
+		// continue finding the root of the resource we want to get the data from
+		hierPaths = r.Children[p.GetElem()[0].GetName()].GetHierarchicalResourcesLocal(root, &gnmi.Path{Elem: p.GetElem()[1:]}, cp, hierPaths)
+	} else {
+		newcp := cp
+		if !root {
+			newcp = &gnmi.Path{Elem: append(cp.GetElem(), &gnmi.PathElem{Name: r.GetName()})}
+			if r.ResourceBoundary {
+				hierPaths = append(hierPaths, newcp)
+				return hierPaths
+			}
+		}
+		for _, h := range r.Children {
+			hierPaths = h.GetHierarchicalResourcesLocal(false, p, newcp, hierPaths)
+		}
+	}
+	return hierPaths
+}
+
+// Returns all leafRefs for a given resource
+// 1. p is the path of the root resource
+// 2. cp is the current path that extends to find the hierarchical resources once p is found
+// 3. leafRefs contains the leafRefs of the resource
+func (r *{{$fullName | toLowerCamelCase}}) GetLeafRefsLocal(root bool, p *gnmi.Path, cp *gnmi.Path, leafRefs []*leafref.LeafRef) []*leafref.LeafRef {
+	if len(p.GetElem()) != 0 {
+		// continue finding the root of the resource we want to get the data from
+		leafRefs = r.Children[p.GetElem()[0].GetName()].GetLeafRefsLocal(root, &gnmi.Path{Elem: p.GetElem()[1:]}, cp, leafRefs)
+	} else {
+		newcp := yparser.DeepCopyGnmiPath(cp)
+		if !root {
+			newcp = r.getNewPathWithKeys(cp)
+			if r.ResourceBoundary {
+				// when we are at the boundary we can return, since the leafref does not belong to this resource
+				return leafRefs
+			} else {
+				leafRefs = r.appendLeafRefs(newcp, leafRefs)
+			}
+		} else {
+			// append leafrefs of the root resource
+			leafRefs = r.appendLeafRefs(newcp, leafRefs)
+		}
+		for x, h := range r.Children {
+			fmt.Printf("GetLeafRefsLocal: name: %s, child %s, path: %s\n", r.Name, x, yparser.GnmiPath2XPath(newcp, true))
+			leafRefs = h.GetLeafRefsLocal(false, p, newcp, leafRefs)
+		}
+	}
+	return leafRefs
+}
+
+func (r *{{$fullName | toLowerCamelCase}}) getNewPathWithKeys(cp *gnmi.Path) *gnmi.Path {
+	if len(r.GetKey()) != 0 {
+		keys := make(map[string]string, 0)
+		for _, key := range r.GetKey() {
+			keys[key] = ""
+		}
+		// return path with keys
+		return &gnmi.Path{Elem: append(cp.GetElem(), &gnmi.PathElem{Name: r.GetName(), Key: keys})}
+	}
+	// return path without keys
+	return &gnmi.Path{Elem: append(cp.GetElem(), &gnmi.PathElem{Name: r.GetName()})}
+}
+
+func (r *{{$fullName | toLowerCamelCase}}) appendLeafRefs(cp *gnmi.Path, leafRefs []*leafref.LeafRef) []*leafref.LeafRef {
+	for _, lr := range r.GetLeafRef() {
+		// check if the localPath is one of the keys in the path. If not add it to the leafref
+		if len(cp.GetElem()) != 0 && len(cp.GetElem()[len(cp.GetElem())-1].GetKey()) != 0 {
+			if _, ok := cp.GetElem()[len(cp.GetElem())-1].GetKey()[lr.LocalPath.GetElem()[0].GetName()]; ok {
+				// don't add the localPath Elem to the leaf ref
+				leafRefs = append(leafRefs, &leafref.LeafRef{
+					LocalPath:  cp,
+					RemotePath: lr.RemotePath,
+				})
+			} else {
+				// the leaafref localPath Elem does not match any key
+				// // -> add the localPath Elem to the leaf ref
+				leafRefs = append(leafRefs, &leafref.LeafRef{
+					LocalPath:  &gnmi.Path{Elem: append(cp.GetElem(), &gnmi.PathElem{Name: lr.LocalPath.GetElem()[0].GetName()})},
+					RemotePath: lr.RemotePath,
+				})
+			}
+		} else {
+			// current path Elem does not exist and there is also no key in the current path
+			// -> add the localPath Elem to the leaf ref
+			leafRefs = append(leafRefs, &leafref.LeafRef{
+				LocalPath:  &gnmi.Path{Elem: append(cp.GetElem(), &gnmi.PathElem{Name: lr.LocalPath.GetElem()[0].GetName()})},
+				RemotePath: lr.RemotePath,
+			})
+		}
+		
+	}
+	return leafRefs
+}

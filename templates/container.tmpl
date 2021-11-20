@@ -1,0 +1,77 @@
+{{- $name := .Name}}
+{{- $fullName := .FullName}}
+{{- $keys := .Keys}}
+{{- $children := .Children}}
+{{- $resourceBoundary := .ResourceBoundary}}
+{{- $leafRefs := .LeafRefs}}
+package yangschema
+
+import (    
+{{- if ne ($leafRefs | len) 0 }}
+	"github.com/openconfig/gnmi/proto/gnmi"
+{{- end }}
+    "github.com/yndd/ndd-yang/pkg/yentry"
+    "github.com/yndd/ndd-yang/pkg/leafref"
+)
+
+{{- if eq $fullName "root" }} 
+func Init{{$fullName | toUpperCamelCase}}(p *yentry.Entry, opts ...yentry.EntryOption) *yentry.Entry {
+{{- else }}
+func init{{$fullName | toUpperCamelCase}}(p *yentry.Entry, opts ...yentry.EntryOption) *yentry.Entry {
+{{- end }}
+	children := map[string]yentry.EntryInitFunc{
+    {{- range $index, $child := $children}}
+    {{- if eq $fullName "root" }}
+        "{{$child}}": init{{$child | toUpperCamelCase}},
+    {{- else}}
+		"{{$child}}": init{{$fullName | toUpperCamelCase}}{{$child | toUpperCamelCase}},
+    {{- end}}
+    {{- end}}
+	}
+    e := &yentry.Entry{
+        Name: "{{$name}}",
+        Key: []string{
+        {{- range $index, $key := $keys}}
+            "{{$key}}",
+        {{- end}}
+        },
+        Parent: p,
+        Children: make(map[string]*yentry.Entry),
+        ResourceBoundary: {{$resourceBoundary}},
+        LeafRefs: []*leafref.LeafRef{
+            {{- range $index, $leafref := $leafRefs}}
+            {
+                LocalPath: &gnmi.Path{
+                    Elem: []*gnmi.PathElem{
+                {{- range $idx, $element := $leafref.LocalPath.Elem}}
+                        {Name: "{{$element.Name}}"},
+                {{- end}}
+                    },
+                },
+                RemotePath: &gnmi.Path{
+                    Elem: []*gnmi.PathElem{
+                {{- range $idx, $element := $leafref.RemotePath.Elem}}
+                {{- if eq ($element.Key | len) 0 }}
+                        {Name: "{{$element.Name}}"},
+                {{- else }}
+                {{- range $keyname, $keyvalue := $element.Key }}
+                        {Name: "{{$element.Name}}", Key: map[string]string{"{{$keyname}}": ""}},
+                {{- end }}
+                {{- end }}
+                {{- end }}
+                    },
+                },
+            },
+            {{- end}}
+        },
+    }
+
+    for _, opt := range opts {
+		opt(e)
+	}
+
+    for name, initFunc := range children {
+        e.Children[name] = initFunc(e, yentry.WithLogging(e.Log))
+    }
+	return e
+}

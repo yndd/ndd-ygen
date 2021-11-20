@@ -1,5 +1,5 @@
 /*
-Copyright 2020 Wim Henderickx.
+Copyright 2020 Yndd.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package generator
+package utils
 
 import (
 	"os"
 )
 
 // FileExists function
-func fileExists(filename string) bool {
+func FileExists(filename string) bool {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
 		return false

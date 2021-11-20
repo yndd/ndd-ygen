@@ -29,6 +29,7 @@ var (
 	yangModuleDirs       []string
 	resourceMapInputFile string
 	resourceMapAll       bool
+	resourceschema       bool
 	outputDir            string
 	packageName          string
 	version              string
@@ -77,12 +78,17 @@ var generateCmd = &cobra.Command{
 			return err
 		}
 
-		
-		if err := g.Render(); err != nil {
-			log.Debug("Error", "error", err)
-			return err
+		if !resourceschema {
+			if err := g.Render(); err != nil {
+				log.Debug("Error", "error", err)
+				return err
+			}
+		} else {
+			if err := g.RenderSchema(); err != nil {
+				log.Debug("Error", "error", err)
+				return err
+			}
 		}
-
 		g.ShowActualPathPerResource()
 
 		return nil
@@ -100,5 +106,5 @@ func init() {
 	generateCmd.Flags().StringVarP(&version, "version", "v", "v1", "The version of the api to geenrate")
 	generateCmd.Flags().StringVarP(&apiGroup, "apiGroup", "g", "srl.ndd.henderiw.be", "The group of the api to geenrate")
 	generateCmd.Flags().StringVarP(&prefix, "prefix", "a", "srl", "The prefix that is added to the kubernetes api resource")
-
+	generateCmd.Flags().BoolVarP(&resourceschema, "schema", "x", false, "The schema flag allows to generate the yang schema")
 }

@@ -18,20 +18,23 @@ package generator
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/stoewer/go-strcase"
 	"github.com/yndd/ndd-yang/pkg/container"
+	"github.com/yndd/ndd-yang/pkg/leafref"
 	"github.com/yndd/ndd-yang/pkg/parser"
 	"github.com/yndd/ndd-yang/pkg/resource"
 )
 
 func (g *Generator) Render() error {
 	// Render the data
-	for _, r := range g.Resources {
-		fmt.Printf("Resource: %s, %#v\n", r.GetResourceNameWithPrefix(g.Config.Prefix), r.GetRootContainerEntry().GetKey())
-		r.AssignFileName(g.Config.Prefix, "_types.go")
-		if err := r.CreateFile(g.Config.OutputDir, "api", g.Config.Version); err != nil {
+	for _, r := range g.GetResources() {
+		fmt.Printf("Resource: %s, %#v\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()), r.GetRootContainerEntry().GetKey())
+		r.AssignFileName(g.GetConfig().GetPrefix(), "_types.go")
+		if err := r.CreateFile(g.GetConfig().GetOutputDir(), "api", g.GetConfig().GetVersion()); err != nil {
 			return err
 		}
 		if err := g.WriteResourceHeader(r); err != nil {
@@ -90,13 +93,13 @@ func (g *Generator) WriteResourceHeader(r *resource.Resource) error {
 		ResourceTest2          *gnmi.Path
 		ResourceTest3          *gnmi.Path
 	}{
-		Version:                g.Config.Version,
-		ApiGroup:               g.Config.ApiGroup,
+		Version:                g.GetConfig().GetVersion(),
+		ApiGroup:               g.GetConfig().GetApiGroup(),
 		ResourceLastElement:    strcase.LowerCamelCase(r.ResourceLastElement()),
-		ResourceNameWithPrefix: r.GetResourceNameWithPrefix(g.Config.Prefix),
+		ResourceNameWithPrefix: r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()),
 	}
 
-	if err := g.Template.ExecuteTemplate(r.ResFile, "resourceHeader"+".tmpl", s); err != nil {
+	if err := g.GetTemplate().ExecuteTemplate(r.ResFile, "resourceHeader"+".tmpl", s); err != nil {
 		return err
 	}
 	return nil
@@ -112,7 +115,7 @@ func (g *Generator) WriteResourceContainers(r *resource.Resource, c *container.C
 		Entries: c.Entries,
 	}
 
-	if err := g.Template.ExecuteTemplate(r.ResFile, "resourceContainer"+".tmpl", s); err != nil {
+	if err := g.GetTemplate().ExecuteTemplate(r.ResFile, "resourceContainer"+".tmpl", s); err != nil {
 		return err
 	}
 	return nil
@@ -129,13 +132,13 @@ func (g *Generator) WriteResourceEnd(r *resource.Resource) error {
 		ResourceNameWithPrefix string
 		HElements              []*resource.HeInfo
 	}{
-		Prefix:                 g.Config.Prefix,
+		Prefix:                 g.GetConfig().GetPrefix(),
 		ResourceLastElement:    strcase.UpperCamelCase(r.ResourceLastElement()),
 		ResourceName:           r.GetResourceNameWithPrefix(""),
-		ResourceNameWithPrefix: r.GetResourceNameWithPrefix(g.Config.Prefix),
+		ResourceNameWithPrefix: r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()),
 		HElements:              r.GetHierarchicalElements(),
 	}
-	if err := g.Template.ExecuteTemplate(r.ResFile, "resourceEnd"+".tmpl", s); err != nil {
+	if err := g.GetTemplate().ExecuteTemplate(r.ResFile, "resourceEnd"+".tmpl", s); err != nil {
 		return err
 	}
 	return nil
@@ -152,7 +155,7 @@ func (g *Generator) WriteResourceLocalLeafRef(r *resource.Resource) error {
 		LeafRefs:     r.LocalLeafRefs,
 	}
 	//g.log.Debug("local leafrefs", "local leafref", r.LocalLeafRefs)
-	if err := g.Template.ExecuteTemplate(r.ResFile, "resourceLeafRef"+".tmpl", s); err != nil {
+	if err := g.GetTemplate().ExecuteTemplate(r.ResFile, "resourceLeafRef"+".tmpl", s); err != nil {
 		return err
 	}
 	return nil
@@ -169,7 +172,60 @@ func (g *Generator) WriteResourceExternalLeafRef(r *resource.Resource) error {
 		LeafRefs:     r.ExternalLeafRefs,
 	}
 	//g.log.Debug("External leafrefs", "external leafref", r.LocalLeafRefs)
-	if err := g.Template.ExecuteTemplate(r.ResFile, "resourceLeafRef"+".tmpl", s); err != nil {
+	if err := g.GetTemplate().ExecuteTemplate(r.ResFile, "resourceLeafRef"+".tmpl", s); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *Generator) RenderSchema() error {
+	for _, r := range g.GetResources() {
+		for _, c := range r.ContainerList {
+			//fmt.Printf("Container FullName %s\n", c.GetFullNameWithRoot())
+			//fmt.Printf("Container Name %s\n", c.GetName())
+			//fmt.Printf("Container Keys %s\n", c.GetKeyNames())
+			//fmt.Printf("Container Children %s\n", c.GetChildren())
+			//fmt.Printf("Container ResourceVoundary %s\n", c.GetResourceBoundary())
+			//for _, e := range c.GetEntries() {
+			//	fmt.Printf("Container Entry Name: %v, Key: %v, Type: %v %v\n", e.GetName(), e.GetKey(), e.GetType(), e.Mandatory)
+			//}
+
+			f, err := os.Create(filepath.Join(g.GetConfig().GetOutputDir(), "yangschema", strcase.LowerCamelCase(c.GetFullNameWithRoot())+".go"))
+			if err != nil {
+				return err
+			}
+
+			if err := g.WriteContainer(f, c); err != nil {
+				g.log.Debug("Write container error", "error", err)
+				return err
+			}
+
+			if err := f.Close(); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (g *Generator) WriteContainer(f *os.File, c *container.Container) error {
+	s := struct {
+		Name             string
+		FullName         string
+		Keys             []string
+		Children         []string
+		ResourceBoundary bool
+		LeafRefs         []*leafref.LeafRef
+	}{
+		Name:             c.GetName(),
+		FullName:         c.GetFullNameWithRoot(),
+		Keys:             c.GetKeyNames(),
+		Children:         c.GetChildren(),
+		ResourceBoundary: c.GetResourceBoundary(),
+		LeafRefs:         c.GetLeafRefs(),
+	}
+	//g.log.Debug("External leafrefs", "external leafref", r.LocalLeafRefs)
+	if err := g.GetTemplate().ExecuteTemplate(f, "container.tmpl", s); err != nil {
 		return err
 	}
 	return nil

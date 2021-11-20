@@ -3,7 +3,7 @@
 type {{ .ResourceNameWithPrefix}}Parameters struct {
     {{- range $index, $hinfo := $.HElements}}
     {{- if ne $hinfo.Key ""}}
-    {{ $prefix | toUpperCamelCase}}{{ $hinfo.Name |  toUpperCamelCase}}{{ $hinfo.Key |  toUpperCamelCase}} *{{ $hinfo.Type}} `json:"{{ $hinfo.Name  |  toKebabCase}}-{{ $hinfo.Key  |  toKebabCase}}"`
+    {{ $prefix | toUpperCamelCase}}{{ $hinfo.Name |  toUpperCamelCase}}{{ $hinfo.Key | toUpperCamelCase}} *{{ $hinfo.Type}} `json:"{{ $hinfo.Name  |  toKebabCase}}-{{ $hinfo.Key  |  toKebabCase}}"`
     {{- end}}
     {{- end}}
 	{{ .ResourceNameWithPrefix}} *{{ .ResourceLastElement}} `json:"{{.ResourceName |  toKebabCase }}"`
