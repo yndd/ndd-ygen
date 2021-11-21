@@ -31,9 +31,10 @@ import (
 
 func (g *Generator) Render() error {
 	// Render the data
-	for _, r := range g.GetResources() {
+	for _, r := range g.GetActualResources() {
 		fmt.Printf("Resource: %s, %#v\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()), r.GetRootContainerEntry().GetKey())
 		r.AssignFileName(g.GetConfig().GetPrefix(), "_types.go")
+		/*
 		if err := r.CreateFile(g.GetConfig().GetOutputDir(), "api", g.GetConfig().GetVersion()); err != nil {
 			return err
 		}
@@ -42,30 +43,27 @@ func (g *Generator) Render() error {
 			return err
 		}
 
+		/*
 		for _, c := range r.ContainerList {
 			if err := g.WriteResourceContainers(r, c); err != nil {
 				g.log.Debug("Write resource container error", "error", err)
 				return err
 			}
 
-			/*
-				fmt.Printf("Nbr: %d, ResourceName: %s, Container Name: %s\n", i, *r.GetAbsoluteXPath(), c.Name)
-				for n, e := range c.Entries {
-					if e.Next != nil {
-						fmt.Printf("  Entry: %d, Name: %s, Type: %s, Mandatory: %t WithNewContainerPointer\n", n, e.Name, c.Name+e.Name, e.Mandatory)
-					} else {
-						fmt.Printf("  Entry: %d, Name: %s, Type: %s, Mandatory: %t\n", n, e.Name, e.Type, e.Mandatory)
-					}
-				}
-			*/
+	
 		}
+		*/
+		
 
+		/*
 		if err := g.WriteResourceEnd(r); err != nil {
 			g.log.Debug("Write resource end error", "error", err)
 			return err
 		}
+		*/
 
 		// EXPERIMENTAL
+		/*
 		if err := g.WriteResourceLocalLeafRef(r); err != nil {
 			g.log.Debug("Write resource local leafRef error", "error", err)
 			return err
@@ -74,10 +72,13 @@ func (g *Generator) Render() error {
 			g.log.Debug("Write resource external leafRef error", "error", err)
 			return err
 		}
+		*/
 
+		/*
 		if err := r.CloseFile(); err != nil {
 			return err
 		}
+		*/
 	}
 	return nil
 }

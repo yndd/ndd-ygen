@@ -251,9 +251,11 @@ func (g *Generator) ShowResources() {
 func (g *Generator) ShowActualPathPerResource() {
 	for _, r := range g.GetActualResources() {
 		fmt.Printf("Resource Path: %s\n", *r.GetAbsoluteXPath())
+		/*
 		for _, pe := range r.GetActualGnmiFullPathWithKeys().GetElem() {
 			fmt.Printf("Path Element: PathElem Name: %s PathElem Key: %v\n", pe.GetName(), pe.GetKey())
 		}
+		*/
 	}
 }
 

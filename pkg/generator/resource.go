@@ -32,7 +32,7 @@ import (
 func (g *Generator) IsResourceBoundary(respath string) bool {
 	inputPath := yparser.Xpath2GnmiPath(respath, 0)
 	for _, r := range g.GetResources()[1:] {
-		fmt.Printf("InputPath: %s, resource Path: %s\n", yparser.GnmiPath2XPath(inputPath, false), yparser.GnmiPath2XPath(r.GetAbsoluteGnmiPath(), false))
+		fmt.Printf("resource Path: %s\n", *r.GetAbsoluteXPath())
 		// if the input path is smaller than the resource we know there is no match
 		if len(r.GetAbsoluteGnmiPath().GetElem()) == len(inputPath.GetElem()) {
 			found := true
@@ -54,14 +54,14 @@ func (g *Generator) IsResourceBoundary(respath string) bool {
 
 func (g *Generator) GetActualResources() []*resource.Resource {
 	resources := make([]*resource.Resource, 0)
-	if !g.GetConfig().GetResourceMapAll() {
+	if g.GetConfig().GetResourceMapAll() {
 		// when generating the full resource e.g. for state use cases or the runtime yang schema
 		// we can just return the first resource entry
 		resources = append(resources, g.GetResources()[0])
 	} else {
 		// when generating the individual resources we skip the first resource since
 		// it is used as a full resource generator
-		resources = g.GetResources()[:1]
+		resources = g.GetResources()[1:]
 	}
 	return resources
 }
@@ -181,11 +181,10 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 						cPtr = r.ContainerLevelKeys[newLevel-1][len(r.ContainerLevelKeys[newLevel-1])-1]
 					}
 					fmt.Printf("xpath: %s, resPath: %s, level: %d\n", *r.GetAbsoluteXPathWithoutKey(), resPath, r.ContainerLevel)
-
 					// Leaf processing
 					if e.Kind.String() == "Leaf" {
-						// fmt.Printf("Leaf Name: %s, ResPath: %s \n", e.Name, resPath)
-						// fmt.Printf("Entry: Name: %s, NameSpace: %#v\n", e.Name, e)
+						fmt.Printf("Leaf Name: %s, ResPath: %s \n", e.Name, resPath)
+						fmt.Printf("Entry: Name: %s, Dir: %#v, Type: %v, Units: %s, List: %v\n", e.Name, e.Dir, g.parser.GetTypeName(e), e.Units, e.ListAttr )
 						// add entry to the container, containerKey allows to see if a
 						cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, nil, containerKey))
 						// leafRef processing
