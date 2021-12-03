@@ -27,14 +27,16 @@ import (
 	"github.com/yndd/ndd-yang/pkg/leafref"
 	"github.com/yndd/ndd-yang/pkg/parser"
 	"github.com/yndd/ndd-yang/pkg/resource"
+	"github.com/yndd/ndd-yang/pkg/yparser"
 )
 
 func (g *Generator) Render() error {
 	// Render the data
 	for _, r := range g.GetActualResources() {
-		fmt.Printf("Resource: %s\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()))
+		fmt.Printf("Render Resource: %s\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()))
+		fmt.Printf("Render Resource path: %s\n", yparser.GnmiPath2XPath(r.GetActualGnmiFullPathWithKeys(), true))
 		for _, c := range r.ContainerList {
-			fmt.Printf("Container: %s\n", c.GetFullName())
+			fmt.Printf("Render Container: %s\n", c.GetFullName())
 		}
 		r.AssignFileName(g.GetConfig().GetPrefix(), "_types.go")
 		/*
