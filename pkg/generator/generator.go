@@ -51,7 +51,6 @@ type Generator struct {
 	config *Config // holds the configuration for the generator
 	//ResourceConfig  map[string]*ResourceDetails // holds the configuration of the resources we should generate
 	resources      []*resource.Resource // holds the resources that are being generated
-	resourcesExtra []*resource.Resource // holds the resources that
 	entries        []*yang.Entry // Yang entries parsed from the yang files
 	template       *template.Template
 	log            logging.Logger

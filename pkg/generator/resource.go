@@ -80,6 +80,7 @@ func (g *Generator) FindBestMatch(inputPath *gnmi.Path) (*resource.Resource, boo
 		// if the input path is smaller than the resource we know there is no match
 		if len(r.GetAbsoluteGnmiPath().GetElem()) <= len(inputPath.GetElem()) {
 			found = true
+			//fmt.Printf("FindBestMatch: resPath: %s, inputPath: %s\n", yparser.GnmiPath2XPath(r.GetAbsoluteGnmiPath(), false), yparser.GnmiPath2XPath(inputPath, false))
 			// given we know the input PathElem are >= the resource Elements we can compare
 			// the elements using the index of the resource PathElem
 			for i, PathElem := range r.GetAbsoluteGnmiPath().GetElem() {
@@ -152,13 +153,14 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 	// only add the pathElem this yang entry is not a choice entry
 	// 1. e.IsChoice() represents that the current entry is a choice -> we can skip the processing
 	// 2. choice means the previous yang entry was a choice so we need to skip one more round in processing
+	newdynPath := yparser.DeepCopyGnmiPath(dynPath)
 	if !e.IsChoice() {
 		if !choice {
 			resPath += filepath.Join("/", e.Name)
-			dynPath.Elem = append(dynPath.Elem, (*gnmi.PathElem)(g.parser.CreatePathElem(e)))
+			newdynPath.Elem = append(newdynPath.Elem, (*gnmi.PathElem)(g.parser.CreatePathElem(e)))
 			//fmt.Printf("resource path: %s \n", *g.parser.GnmiPathToXPath(dynPath, false))
 
-			if r, ok := g.DoesResourceMatch(dynPath); ok {
+			if r, ok := g.DoesResourceMatch(newdynPath); ok {
 				fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
 				switch {
 				case e.RPC != nil:
@@ -273,7 +275,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 		// 2. e.key is supplied to the next iteration as this identifies the key that is used at the containerlevel
 		// the key is resolved with the name in the next level resolution and this is how we can identify
 		// if a entry (which is the key name) is mandatory or not
-		g.ResourceGenerator(resPath, dynPath, e.Dir[k], e.IsChoice(), e.Key)
+		g.ResourceGenerator(resPath, newdynPath, e.Dir[k], e.IsChoice(), e.Key)
 	}
 	return nil
 }

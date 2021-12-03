@@ -32,7 +32,10 @@ import (
 func (g *Generator) Render() error {
 	// Render the data
 	for _, r := range g.GetActualResources() {
-		fmt.Printf("Resource: %s, %#v\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()), r.GetRootContainerEntry().GetKey())
+		fmt.Printf("Resource: %s\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()))
+		for _, c := range r.ContainerList {
+			fmt.Printf("Container: %s\n", c.GetFullName())
+		}
 		r.AssignFileName(g.GetConfig().GetPrefix(), "_types.go")
 		/*
 		if err := r.CreateFile(g.GetConfig().GetOutputDir(), "api", g.GetConfig().GetVersion()); err != nil {
@@ -182,7 +185,7 @@ func (g *Generator) WriteResourceExternalLeafRef(r *resource.Resource) error {
 func (g *Generator) RenderSchema() error {
 	for _, r := range g.GetResources() {
 		for _, c := range r.ContainerList {
-			//fmt.Printf("Container FullName %s\n", c.GetFullNameWithRoot())
+			fmt.Printf("Container FullName %s\n", c.GetFullNameWithRoot())
 			//fmt.Printf("Container Name %s\n", c.GetName())
 			//fmt.Printf("Container Keys %s\n", c.GetKeyNames())
 			//fmt.Printf("Container Children %s\n", c.GetChildren())
