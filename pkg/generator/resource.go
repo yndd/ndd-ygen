@@ -61,7 +61,7 @@ func (g *Generator) GetActualResources() []*resource.Resource {
 	} else {
 		// when generating the individual resources we skip the first resource since
 		// it is used as a full resource generator
-		resources = g.GetResources()[1:]
+		resources = g.GetResources()
 	}
 	return resources
 }
