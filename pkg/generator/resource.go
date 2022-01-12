@@ -186,7 +186,11 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 					// Leaf processing
 					if e.Kind.String() == "Leaf" {
 						fmt.Printf("Leaf Name: %s, ResPath: %s \n", e.Name, resPath)
-						fmt.Printf("Entry: Name: %s, Dir: %#v, Type: %v, Units: %s, List: %v\n", e.Name, e.Dir, g.parser.GetTypeName(e), e.Units, e.ListAttr )
+						fmt.Printf("Entry: Name: %s, Dir: %#v, Type: %v, Units: %s, List: %v\n", e.Name, e.Dir, g.parser.GetTypeName(e), e.Units, e.ListAttr)
+						if e.Type.Enum != nil {
+							fmt.Printf("Entry: Name: %s Enum: %v\n", e.Name, e.Type.Enum.Names())
+						}
+
 						// add entry to the container, containerKey allows to see if a
 						cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, nil, containerKey))
 						// leafRef processing
@@ -207,15 +211,15 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							fmt.Printf("LocalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
 							cPtr.AddLeafRef(localPath, remotePath)
 							/*
-							if local {
-								// local leafref
-								fmt.Printf("LocalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
-								cPtr.AddLocalLeafRef(localPath, remotePath)
-							} else {
-								// external leafref
-								fmt.Printf("ExternalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
-								cPtr.AddExternalLeafRef(localPath, remotePath)
-							}
+								if local {
+									// local leafref
+									fmt.Printf("LocalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
+									cPtr.AddLocalLeafRef(localPath, remotePath)
+								} else {
+									// external leafref
+									fmt.Printf("ExternalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
+									cPtr.AddExternalLeafRef(localPath, remotePath)
+								}
 							*/
 						}
 					} else { // List processing with or without a key

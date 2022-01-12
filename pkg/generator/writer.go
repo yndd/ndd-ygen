@@ -33,6 +33,7 @@ import (
 func (g *Generator) Render() error {
 	// Render the data
 	for _, r := range g.GetActualResources() {
+		fmt.Printf("Resource: %s\n", r.GetResourcePath())
 		fmt.Printf("Render Resource: %s\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()))
 		fmt.Printf("Render Resource path: %s\n", yparser.GnmiPath2XPath(r.GetActualGnmiFullPathWithKeys(), true))
 		for _, c := range r.ContainerList {
@@ -40,51 +41,52 @@ func (g *Generator) Render() error {
 		}
 		r.AssignFileName(g.GetConfig().GetPrefix(), "_types.go")
 		/*
-		if err := r.CreateFile(g.GetConfig().GetOutputDir(), "api", g.GetConfig().GetVersion()); err != nil {
-			return err
-		}
-		if err := g.WriteResourceHeader(r); err != nil {
-			g.log.Debug("Write resource header error", "error", err)
-			return err
-		}
-
-		/*
-		for _, c := range r.ContainerList {
-			if err := g.WriteResourceContainers(r, c); err != nil {
-				g.log.Debug("Write resource container error", "error", err)
+			if err := r.CreateFile(g.GetConfig().GetOutputDir(), "api", g.GetConfig().GetVersion()); err != nil {
+				return err
+			}
+			if err := g.WriteResourceHeader(r); err != nil {
+				g.log.Debug("Write resource header error", "error", err)
 				return err
 			}
 
-	
-		}
+			/*
+			for _, c := range r.ContainerList {
+				if err := g.WriteResourceContainers(r, c); err != nil {
+					g.log.Debug("Write resource container error", "error", err)
+					return err
+				}
+
+
+			}
 		*/
-		
 
 		/*
-		if err := g.WriteResourceEnd(r); err != nil {
-			g.log.Debug("Write resource end error", "error", err)
-			return err
-		}
+			if err := g.WriteResourceEnd(r); err != nil {
+				g.log.Debug("Write resource end error", "error", err)
+				return err
+			}
 		*/
 
 		// EXPERIMENTAL
 		/*
-		if err := g.WriteResourceLocalLeafRef(r); err != nil {
-			g.log.Debug("Write resource local leafRef error", "error", err)
-			return err
-		}
-		if err := g.WriteResourceExternalLeafRef(r); err != nil {
-			g.log.Debug("Write resource external leafRef error", "error", err)
-			return err
-		}
+			if err := g.WriteResourceLocalLeafRef(r); err != nil {
+				g.log.Debug("Write resource local leafRef error", "error", err)
+				return err
+			}
+			if err := g.WriteResourceExternalLeafRef(r); err != nil {
+				g.log.Debug("Write resource external leafRef error", "error", err)
+				return err
+			}
 		*/
 
 		/*
-		if err := r.CloseFile(); err != nil {
-			return err
-		}
+			if err := r.CloseFile(); err != nil {
+				return err
+			}
 		*/
 	}
+
+	g.RenderSchemaMethods()
 	return nil
 }
 
@@ -211,6 +213,21 @@ func (g *Generator) RenderSchema() error {
 			}
 		}
 	}
+	return nil
+}
+
+func (g *Generator) RenderSchemaMethods() error {
+	fmt.Println("%%%%%%%%%%%%%%%%%%%%%%")
+	for _, r := range g.GetResources() {
+		fmt.Printf("ResourceName %s\n", r.GetAbsoluteName())
+		if r.GetParent() != nil {
+			fmt.Printf("  Parent %s\n", r.GetParent().GetAbsoluteName())
+		}
+		for _, child := range r.GetChildren() {
+			fmt.Printf("  Child %s\n", child.GetAbsoluteName())
+		}
+	}
+	fmt.Println("%%%%%%%%%%%%%%%%%%%%%%")
 	return nil
 }
 
