@@ -200,7 +200,10 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							}
 							c := container.NewContainer(dummyYangEntry.Name, g.IsResourceBoundary(resPath), cPtr)
 							r.ContainerList = append(r.ContainerList, c)
-							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, cPtr, c, containerKey))
+							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(dummyYangEntry, c, cPtr, containerKey))
+
+							c.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, nil, containerKey))
+
 
 						} else {
 							// add entry to the container, containerKey allows to see if a
@@ -275,7 +278,6 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
 							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], c)
 							r.ContainerList = append(r.ContainerList, c)
-
 						}
 					}
 				}
