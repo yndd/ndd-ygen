@@ -200,11 +200,11 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							}
 							c := container.NewContainer(dummyYangEntry.Name, g.IsResourceBoundary(resPath), cPtr)
 							r.ContainerList = append(r.ContainerList, c)
-							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, c, cPtr, containerKey))
+							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, cPtr, containerKey))
 
 						} else {
 							// add entry to the container, containerKey allows to see if a
-							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, cPtr, containerKey))
+							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, nil, containerKey))
 							// leafRef processing
 							localPath, remotePath, local := g.parser.ProcessLeafRefGnmi(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
 							if localPath != nil {
