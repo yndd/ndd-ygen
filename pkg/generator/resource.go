@@ -188,42 +188,54 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 						//fmt.Printf("Leaf Name: %s, ResPath: %s \n", e.Name, resPath)
 						//fmt.Printf("Entry: Name: %s, Dir: %#v, Type: %v, Units: %s, List: %v\n", e.Name, e.Dir, g.parser.GetTypeName(e), e.Units, e.ListAttr)
 						/*
-						if e.Type.Enum != nil {
-							fmt.Printf("Entry: Name: %s Enum: %v\n", e.Name, e.Type.Enum.Names())
-						}
-						*/
-
-						// add entry to the container, containerKey allows to see if a
-						cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, nil, containerKey))
-						// leafRef processing
-						localPath, remotePath, local := g.parser.ProcessLeafRefGnmi(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
-						if localPath != nil {
-							// validate if the leafrefs is a local leafref or an external leafref
-							if local {
-								// local leafref
-								r.AddLocalLeafRef(localPath, remotePath)
-							} else {
-								// external leafref
-								r.AddExternalLeafRef(localPath, remotePath)
+							if e.Type.Enum != nil {
+								fmt.Printf("Entry: Name: %s Enum: %v\n", e.Name, e.Type.Enum.Names())
 							}
-						}
-						localPath, remotePath, _ = yparser.ProcessLeafRef(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
-						if localPath != nil {
-							// validate if the leafrefs is a local leafref or an external leafref
-							//fmt.Printf("LocalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
-							cPtr.AddLeafRef(localPath, remotePath)
-							/*
+						*/
+						// leaflist we create a container
+						if e.ListAttr != nil {
+							dummyYangEntry := &yang.Entry{
+								Name:     e.Name,
+								ListAttr: e.ListAttr,
+							}
+							c := container.NewContainer(dummyYangEntry.Name, g.IsResourceBoundary(resPath), cPtr)
+							r.ContainerList = append(r.ContainerList, c)
+							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, c, cPtr, containerKey))
+
+						} else {
+							// add entry to the container, containerKey allows to see if a
+							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, cPtr, containerKey))
+							// leafRef processing
+							localPath, remotePath, local := g.parser.ProcessLeafRefGnmi(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
+							if localPath != nil {
+								// validate if the leafrefs is a local leafref or an external leafref
 								if local {
 									// local leafref
-									fmt.Printf("LocalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
-									cPtr.AddLocalLeafRef(localPath, remotePath)
+									r.AddLocalLeafRef(localPath, remotePath)
 								} else {
 									// external leafref
-									fmt.Printf("ExternalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
-									cPtr.AddExternalLeafRef(localPath, remotePath)
+									r.AddExternalLeafRef(localPath, remotePath)
 								}
-							*/
+							}
+							localPath, remotePath, _ = yparser.ProcessLeafRef(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
+							if localPath != nil {
+								// validate if the leafrefs is a local leafref or an external leafref
+								//fmt.Printf("LocalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
+								cPtr.AddLeafRef(localPath, remotePath)
+								/*
+									if local {
+										// local leafref
+										fmt.Printf("LocalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
+										cPtr.AddLocalLeafRef(localPath, remotePath)
+									} else {
+										// external leafref
+										fmt.Printf("ExternalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
+										cPtr.AddExternalLeafRef(localPath, remotePath)
+									}
+								*/
+							}
 						}
+
 					} else { // List processing with or without a key
 
 						// fmt.Printf("List Name: %s, ResPath: %s \n", e.Name, resPath)
