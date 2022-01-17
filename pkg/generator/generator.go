@@ -266,16 +266,18 @@ func (g *Generator) ShowActualPathPerResource() {
 	}
 }
 
+/*
 func (g *Generator) FindResource(p string) (*resource.Resource, error) {
-	//fmt.Printf("find resource\n")
+	fmt.Printf("find resource\n")
 	for _, r := range g.GetResources() {
-		//fmt.Printf("find resource path %s %s\n", p, *parser.GnmiPathToXPath(r.Path))
-		if p == *g.parser.GnmiPathToXPath(r.Path, false) {
+		fmt.Printf("find resource path %s %s\n", p, yparser.GnmiPath2XPath(r.Path, false))
+		if p == yparser.GnmiPath2XPath(r.Path, false) {
 			return r, nil
 		}
 	}
 	return nil, errors.New(errResourceNotFound)
 }
+*/
 
 // initializes the resource based on the YAML file input
 // The result is stored in the []*Resource list
@@ -298,7 +300,7 @@ func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, pa
 		}
 	*/
 	for path, pathdetails := range pd {
-		//g.log.Debug("Path information", "Path", path, "parent path", pp)
+		g.log.Debug("Path information", "Path", path, "parent path", pp)
 		opts := []resource.Option{}
 		if pp == "/" {
 			// this is attached to the root resource
@@ -307,30 +309,35 @@ func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, pa
 			// add resourcepath
 			opts = append(opts, resource.WithXPath(path))
 			// add subresources
-			subResPaths := make([]*gnmi.Path, 0)
-			if len(pathdetails.SubResources) == 0 {
-				// no subresources exists -> initialize with the resource path
-				subResPaths = append(subResPaths, g.parser.XpathToGnmiPath(path, 0))
-			}
-			for _, subres := range pathdetails.SubResources {
-				subResPaths = append(subResPaths, g.parser.XpathToGnmiPath(filepath.Join(path, subres), 0))
-			}
-			opts = append(opts, resource.WithSubResources(subResPaths))
+			//subResPaths := make([]*gnmi.Path, 0)
+			//if len(pathdetails.SubResources) == 0 {
+			// no subresources exists -> initialize with the resource path
+			//	subResPaths = append(subResPaths, g.parser.XpathToGnmiPath(path, 0))
+			//}
+			//for _, subres := range pathdetails.SubResources {
+			//	subResPaths = append(subResPaths, g.parser.XpathToGnmiPath(filepath.Join(path, subres), 0))
+			//}
+			//opts = append(opts, resource.WithSubResources(subResPaths))
 			// add module
 			opts = append(opts, resource.WithModule(strings.Split(path, "/")[1]))
 		} else {
 			// this is a hierarchical resource, find the hierarchical dependency
-			r, err := g.FindResource(pp)
-			if err != nil {
-				return err
-			}
+
+			/*
+				// given the parent is given we can use this direct
+				r, err := g.FindResource(pp)
+				if err != nil {
+					g.log.Debug("Error cannot find resource", "parent path", pp)
+					return err
+				}
+			*/
 			//
 			split := strings.Split(path, "/")
 			// if the hierarchical path consists of multiple path only the last element of the
-			// hierarchical path is relevaant in the hierarchical context
+			// hierarchical path is relevant in the hierarchical context
 			// the other path elements reside in the parent resource and hence will be part of the
 			// dependency path
-			dp := g.parser.DeepCopyGnmiPath(r.Path)
+			dp := g.parser.DeepCopyGnmiPath(parent.Path)
 			if len(split) > 2 {
 				for i := 1; i < len(split)-1; i++ {
 					dp = g.parser.AppendElemInGnmiPath(dp, split[i], []string{})
@@ -342,19 +349,19 @@ func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, pa
 			opts = append(opts, resource.WithParentPath(dp))
 			//opts = append(opts, resource.WithParent(r))
 			// add subresources
-			subResPaths := make([]*gnmi.Path, 0)
-			if len(pathdetails.SubResources) == 0 {
-				// no subresources exists -> initialize with the resource path
-				subResPaths = append(subResPaths, g.parser.XpathToGnmiPath("/"+split[len(split)-1], 0))
-			}
-			for _, subres := range pathdetails.SubResources {
-				subResPaths = append(subResPaths, g.parser.XpathToGnmiPath(filepath.Join("/"+split[len(split)-1], subres), 0))
-			}
-			opts = append(opts, resource.WithSubResources(subResPaths))
+			//subResPaths := make([]*gnmi.Path, 0)
+			//if len(pathdetails.SubResources) == 0 {
+			// no subresources exists -> initialize with the resource path
+			//	subResPaths = append(subResPaths, g.parser.XpathToGnmiPath("/"+split[len(split)-1], 0))
+			//}
+			//for _, subres := range pathdetails.SubResources {
+			//	subResPaths = append(subResPaths, g.parser.XpathToGnmiPath(filepath.Join("/"+split[len(split)-1], subres), 0))
+			//}
+			//opts = append(opts, resource.WithSubResources(subResPaths))
 			// add module
 			opts = append(opts, resource.WithModule(strings.Split(path, "/")[1]))
 			// add module
-			opts = append(opts, resource.WithModule(r.GetModule()))
+			opts = append(opts, resource.WithModule(parent.GetModule()))
 		}
 
 		// exclude belongs to the previous resource and hence we have to

@@ -23,7 +23,7 @@ type ResourceYamlInput struct {
 
 // PathDetails struct
 type PathDetails struct {
-	SubResources []string               `yaml:"sub-resources"`
+	//SubResources []string               `yaml:"sub-resources"`
 	Excludes     []string               `yaml:"excludes"`
 	Hierarchy    map[string]PathDetails `yaml:"hierarchy"`
 }

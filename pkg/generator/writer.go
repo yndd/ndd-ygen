@@ -32,7 +32,7 @@ import (
 
 func (g *Generator) Render() error {
 	// Render the data
-	for _, r := range g.GetActualResources() {
+	for _, r := range g.GetActualResources()[1:] {
 		fmt.Printf("Resource: %s\n", r.GetResourcePath())
 		fmt.Printf("Render Resource: %s\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()))
 		fmt.Printf("Render Resource path: %s\n", yparser.GnmiPath2XPath(r.GetActualGnmiFullPathWithKeys(), true))
