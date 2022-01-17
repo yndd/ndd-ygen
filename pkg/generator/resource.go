@@ -200,7 +200,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							}
 							c := container.NewContainer(dummyYangEntry.Name, g.IsResourceBoundary(resPath), cPtr)
 							r.ContainerList = append(r.ContainerList, c)
-							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, cPtr, containerKey))
+							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, c, cPtr, containerKey))
 
 						} else {
 							// add entry to the container, containerKey allows to see if a
