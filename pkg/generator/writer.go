@@ -21,12 +21,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/stoewer/go-strcase"
 	"github.com/yndd/ndd-yang/pkg/container"
 	"github.com/yndd/ndd-yang/pkg/leafref"
-	"github.com/yndd/ndd-yang/pkg/resource"
-	"github.com/yndd/ndd-yang/pkg/yparser"
 )
 
 func (g *Generator) Render() error {
@@ -34,7 +31,7 @@ func (g *Generator) Render() error {
 	for _, r := range g.GetActualResources()[1:] {
 		fmt.Printf("Resource: %s\n", r.GetResourcePath())
 		fmt.Printf("Render Resource: %s\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()))
-		fmt.Printf("Render Resource path: %s\n", yparser.GnmiPath2XPath(r.GetActualGnmiFullPathWithKeys(), true))
+		//fmt.Printf("Render Resource path: %s\n", yparser.GnmiPath2XPath(r.GetActualGnmiFullPathWithKeys(), true))
 		for _, c := range r.ContainerList {
 			fmt.Printf("Render Container: %s\n", c.GetFullName())
 		}
@@ -89,6 +86,7 @@ func (g *Generator) Render() error {
 	return nil
 }
 
+/*
 // WriteResourceHeader
 func (g *Generator) WriteResourceHeader(r *resource.Resource) error {
 	s := struct {
@@ -111,7 +109,9 @@ func (g *Generator) WriteResourceHeader(r *resource.Resource) error {
 	}
 	return nil
 }
+*/
 
+/*
 // WriteResourceContainers
 func (g *Generator) WriteResourceContainers(r *resource.Resource, c *container.Container) error {
 	s := struct {
@@ -127,7 +127,8 @@ func (g *Generator) WriteResourceContainers(r *resource.Resource, c *container.C
 	}
 	return nil
 }
-
+*/
+/*
 func (g *Generator) WriteResourceEnd(r *resource.Resource) error {
 
 	r.GetHierarchicalElements()
@@ -150,6 +151,7 @@ func (g *Generator) WriteResourceEnd(r *resource.Resource) error {
 	}
 	return nil
 }
+*/
 
 /*
 func (g *Generator) WriteResourceLocalLeafRef(r *resource.Resource) error {

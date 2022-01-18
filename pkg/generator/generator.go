@@ -137,7 +137,7 @@ func WithLocalRender(b bool) Option {
 // NewYangGoCodeGenerator function defines a new generator
 func NewGenerator(opts ...Option) (*Generator, error) {
 	g := &Generator{
-		config: &Config{},
+		config:    &Config{},
 		resources: make([]*resource.Resource, 0),
 	}
 
@@ -176,7 +176,7 @@ func NewGenerator(opts ...Option) (*Generator, error) {
 			return nil, errors.Wrap(err, errCannotInitializeResources)
 		}
 	}
-	
+
 	// show the result of the processed resources
 	//g.ShowResources()
 
@@ -333,7 +333,7 @@ func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, pa
 			opts = append(opts, resource.WithModule(strings.Split(path, "/")[1]))
 		} else {
 			// this is a hierarchical resource
-			
+
 			// add resourcepath
 			opts = append(opts, resource.WithXPath(path))
 			// add module
@@ -349,16 +349,16 @@ func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, pa
 
 		// initialize the resource
 		newResource := resource.NewResource(parent, opts...)
-		fmt.Printf("new resource path: %s\n", *newResource.GetAbsoluteXPath())
+		fmt.Printf("new resource path: %s\n", yparser.GnmiPath2XPath(newResource.GetAbsolutePath(), false))
 		parent.AddChild(newResource)
 		g.resources = append(g.GetResources(), newResource)
 		if pathdetails.Hierarchy != nil {
 			// run the procedure in a hierarchical way, offset is 0 since the resource does not have
 			// a duplicate element in the path
 			/*
-			for hpath := range pathdetails.Hierarchy {
-				g.GetResources()[len(g.GetResources())-1].GetHierResourceElement().AddHierResourceElement(hpath)
-			}
+				for hpath := range pathdetails.Hierarchy {
+					g.GetResources()[len(g.GetResources())-1].GetHierResourceElement().AddHierResourceElement(hpath)
+				}
 			*/
 
 			// run the resource mapping in a hierarchical way
@@ -381,11 +381,11 @@ func (g *Generator) ShowConfiguration() {
 
 func (g *Generator) ShowResources() {
 	for i, r := range g.GetResources() {
-		if r.GetParent() != nil {
-			fmt.Printf("Nbr: %d, Resource Path: %s, Exclude: %v, DependsOnPath: %v\n", i, *r.GetAbsoluteXPath(), r.GetExcludeRelativeXPath(), yparser.GnmiPath2XPath(r.GetParentPath(), false))
-		} else {
-			fmt.Printf("Nbr: %d, Resource Path: %s, Exclude: %v, DependsOn: %v\n", i, *r.GetAbsoluteXPath(), r.GetExcludeRelativeXPath(), r.GetParent())
-		}
+		//if r.GetParent() != nil {
+		fmt.Printf("Nbr: %d, Resource Path: %s, Exclude: %v, ParentPath: %v\n", i, yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), r.GetExcludeRelativeXPath(), yparser.GnmiPath2XPath(r.GetParentPath(), false))
+		//} else {
+		//	fmt.Printf("Nbr: %d, Resource Path: %s, Exclude: %v, DependsOn: %v\n", i, *r.GetAbsoluteXPath(), r.GetExcludeRelativeXPath(), r.GetParent())
+		//}
 		//fmt.Printf(" HierResourceElements: %v\n", r.GetHierResourceElements().GetHierResourceElements())
 		//for _, subres := range r.GetActualSubResources() {
 		//	fmt.Printf("  Subsresource: %s\n", yparser.GnmiPath2XPath(subres, false))
@@ -395,6 +395,6 @@ func (g *Generator) ShowResources() {
 
 func (g *Generator) ShowActualPathPerResource() {
 	for _, r := range g.GetActualResources() {
-		fmt.Printf("Resource Path: %s\n", *r.GetAbsoluteXPath())
+		fmt.Printf("Resource Path: %s\n", yparser.GnmiPath2XPath(r.GetAbsolutePath(), false))
 	}
 }

@@ -17,7 +17,6 @@ limitations under the License.
 package generator
 
 import (
-	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -34,9 +33,9 @@ func (g *Generator) IsResourceBoundary(respath string) bool {
 	for _, r := range g.GetResources()[1:] {
 		//fmt.Printf("resource Path: %s\n", *r.GetAbsoluteXPath())
 		// if the input path is smaller than the resource we know there is no match
-		if len(r.GetAbsoluteGnmiPath().GetElem()) == len(inputPath.GetElem()) {
+		if len(r.GetAbsolutePath().GetElem()) == len(inputPath.GetElem()) {
 			found := true
-			for i, PathElem := range r.GetAbsoluteGnmiPath().GetElem() {
+			for i, PathElem := range r.GetAbsolutePath().GetElem() {
 				// if the name of the PathElem don't match this is not a resource that matches
 				if PathElem.GetName() != inputPath.GetElem()[i].GetName() {
 					found = false
@@ -78,12 +77,12 @@ func (g *Generator) FindBestMatch(inputPath *gnmi.Path) (*resource.Resource, boo
 	// option 2: for individual resources it is all except the first resource
 	for _, r := range g.GetActualResources() {
 		// if the input path is smaller than the resource we know there is no match
-		if len(r.GetAbsoluteGnmiPath().GetElem()) <= len(inputPath.GetElem()) {
+		if len(r.GetAbsolutePath().GetElem()) <= len(inputPath.GetElem()) {
 			found = true
 			//fmt.Printf("FindBestMatch: resPath: %s, inputPath: %s\n", yparser.GnmiPath2XPath(r.GetAbsoluteGnmiPath(), false), yparser.GnmiPath2XPath(inputPath, false))
 			// given we know the input PathElem are >= the resource Elements we can compare
 			// the elements using the index of the resource PathElem
-			for i, PathElem := range r.GetAbsoluteGnmiPath().GetElem() {
+			for i, PathElem := range r.GetAbsolutePath().GetElem() {
 				// if the name of the PathElem don't match this is not a resource that matches
 				if PathElem.GetName() != inputPath.GetElem()[i].GetName() {
 					found = false
@@ -92,9 +91,9 @@ func (g *Generator) FindBestMatch(inputPath *gnmi.Path) (*resource.Resource, boo
 			}
 
 			// if the PathElem are bigger than the previously found this is a better match
-			if found && len(r.GetAbsoluteGnmiPath().GetElem()) > minLength {
+			if found && len(r.GetAbsolutePath().GetElem()) > minLength {
 				resMatch = r
-				minLength = len(r.GetAbsoluteGnmiPath().GetElem())
+				minLength = len(r.GetAbsolutePath().GetElem())
 			}
 			/*
 				if strings.Contains(*g.parser.GnmiPathToXPath(&inputPath, false), "/nokia-conf/configure/router/ospf") {
@@ -161,7 +160,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 			//fmt.Printf("resource path: %s \n", *g.parser.GnmiPathToXPath(dynPath, false))
 
 			if r, ok := g.DoesResourceMatch(newdynPath); ok {
-				fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
+				//fmt.Printf("match path: %s \n", yparser.GnmiPath2XPath(r.GetAbsolutePath(), false))
 				switch {
 				case e.RPC != nil:
 				case e.ReadOnly():
@@ -175,7 +174,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 					// we look at the level delta from the root of the resource -> newLevel
 					// newLevel = 0 is special since it is the root of the container
 					// newLevel = 0 since there is no container yet we cannot find the container Pointer, since it is not created so far
-					newLevel := strings.Count(resPath, "/") - strings.Count(*r.GetAbsoluteXPathWithoutKey(), "/")
+					newLevel := strings.Count(resPath, "/") - strings.Count(yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), "/")
 					var cPtr *container.Container
 					if newLevel > 0 {
 						r.ContainerLevel = newLevel
@@ -200,14 +199,14 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 								r.ActualPath.Elem = append(r.ActualPath.Elem, yparser.CreatePathElem(e))
 							*/
 							// create a new container and apply to the root of the resource
-							r.Container = container.NewContainer(e.Name, g.IsResourceBoundary(resPath), nil)
+							r.RootContainer = container.NewContainer(e.Name, g.IsResourceBoundary(resPath), nil)
 							// r.Container.Entries = append(r.Container.Entries, parser.CreateContainerEntry(e, nil, nil))
 							// append the container Ptr to the back of the list, to track the used container Pointers per level
 							// newLevel =0
 							r.SetRootContainerEntry(yparser.CreateContainerEntry(e, nil, nil, containerKey))
 							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
-							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], r.Container)
-							r.ContainerList = append(r.ContainerList, r.Container)
+							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], r.RootContainer)
+							r.ContainerList = append(r.ContainerList, r.RootContainer)
 
 						} else {
 							/*
@@ -253,7 +252,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							// add entry to the container, containerKey allows to see if a
 							cPtr.Entries = append(cPtr.Entries, yparser.CreateContainerEntry(e, nil, nil, containerKey))
 							// leafRef processing
-							localPath, remotePath, local := yparser.ProcessLeafRef(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
+							localPath, remotePath, local := yparser.ProcessLeafRef(e, resPath, r.GetAbsoluteGnmiPathFromSource())
 							if localPath != nil {
 								// validate if the leafrefs is a local leafref or an external leafref
 								if local {
@@ -264,7 +263,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 									r.AddExternalLeafRef(localPath, remotePath)
 								}
 							}
-							localPath, remotePath, _ = yparser.ProcessLeafRef(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
+							localPath, remotePath, _ = yparser.ProcessLeafRef(e, resPath, r.GetAbsoluteGnmiPathFromSource())
 							if localPath != nil {
 								// validate if the leafrefs is a local leafref or an external leafref
 								//fmt.Printf("LocalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
