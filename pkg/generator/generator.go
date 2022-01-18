@@ -154,11 +154,13 @@ func NewGenerator(opts ...Option) (*Generator, error) {
 	}
 
 	// process templates to render the resources
-	if g.GetLocalRender() {
-		if err := g.InitTemplates(); err != nil {
-			return nil, errors.New(errParseTemplate)
+	/*
+		if g.GetLocalRender() {
+			if err := g.InitTemplates(); err != nil {
+				return nil, errors.New(errParseTemplate)
+			}
 		}
-	}
+	*/
 
 	// Process resource
 	// Check if the resource input file exists
@@ -332,21 +334,34 @@ func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, pa
 				}
 			*/
 			//
-			split := strings.Split(path, "/")
+			/*
+				split := strings.Split(path, "/")
+			*/
 			// if the hierarchical path consists of multiple path only the last element of the
 			// hierarchical path is relevant in the hierarchical context
 			// the other path elements reside in the parent resource and hence will be part of the
 			// dependency path
-			dp := g.parser.DeepCopyGnmiPath(parent.Path)
-			if len(split) > 2 {
-				for i := 1; i < len(split)-1; i++ {
-					dp = g.parser.AppendElemInGnmiPath(dp, split[i], []string{})
+			/*
+				fmt.Printf("Path: %s, Parent Path: %s, split: %v\n", path, yparser.GnmiPath2XPath(parent.Path, false), split[:len(split)-1])
+				dp := g.parser.DeepCopyGnmiPath(parent.Path)
+				if len(split) > 1 {
+					// start from 1 avoid a white space to be added
+					for i := 1; i < len(split); i++ {
+						dp = g.parser.AppendElemInGnmiPath(dp, split[i], []string{})
+					}
 				}
-			}
-			// the resource path is only consisting of the last element of the hierarchical path
-			opts = append(opts, resource.WithXPath("/"+split[len(split)-1]))
-			// add resource dependency with dependency path
-			opts = append(opts, resource.WithParentPath(dp))
+				fmt.Printf("Parent Path2: %s\n", yparser.GnmiPath2XPath(dp, false))
+			*/
+			//if len(split) -1 > 0 {
+			//	opts = append(opts, resource.WithSubDepPath(split[:len(split)-1]))
+			//}
+			opts = append(opts, resource.WithXPath(path))
+			/*
+				// the resource path is only consisting of the last element of the hierarchical path
+				opts = append(opts, resource.WithXPath("/"+split[len(split)-1]))
+				// add resource dependency with dependency path
+				opts = append(opts, resource.WithParentPath(dp))
+			*/
 			//opts = append(opts, resource.WithParent(r))
 			// add subresources
 			//subResPaths := make([]*gnmi.Path, 0)
@@ -374,6 +389,7 @@ func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, pa
 		// initialize the resource before processing the next hierarchy since the process will check
 		// the dependency and if not initialized the parent resource will not be found.
 		newResource := resource.NewResource(parent, opts...)
+		fmt.Printf("new reosurce path: %s\n", *newResource.GetAbsoluteXPath())
 		parent.AddChild(newResource)
 		g.resources = append(g.GetResources(), newResource)
 		if pathdetails.Hierarchy != nil {

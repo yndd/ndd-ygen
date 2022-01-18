@@ -17,7 +17,6 @@ limitations under the License.
 package generator
 
 import (
-	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -161,7 +160,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 			//fmt.Printf("resource path: %s \n", *g.parser.GnmiPathToXPath(dynPath, false))
 
 			if r, ok := g.DoesResourceMatch(newdynPath); ok {
-				fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
+				//fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
 				switch {
 				case e.RPC != nil:
 				case e.ReadOnly():
