@@ -17,6 +17,7 @@ limitations under the License.
 package generator
 
 import (
+	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -156,11 +157,11 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 	if !e.IsChoice() {
 		if !choice {
 			resPath += filepath.Join("/", e.Name)
-			newdynPath.Elem = append(newdynPath.Elem, (*gnmi.PathElem)(g.parser.CreatePathElem(e)))
+			newdynPath.Elem = append(newdynPath.Elem, (*gnmi.PathElem)(yparser.CreatePathElem(e)))
 			//fmt.Printf("resource path: %s \n", *g.parser.GnmiPathToXPath(dynPath, false))
 
 			if r, ok := g.DoesResourceMatch(newdynPath); ok {
-				//fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
+				fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
 				switch {
 				case e.RPC != nil:
 				case e.ReadOnly():
@@ -199,16 +200,16 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							}
 							c := container.NewContainer(dummyYangEntry.Name, g.IsResourceBoundary(resPath), cPtr)
 							r.ContainerList = append(r.ContainerList, c)
-							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(dummyYangEntry, c, cPtr, containerKey))
+							cPtr.Entries = append(cPtr.Entries, yparser.CreateContainerEntry(dummyYangEntry, c, cPtr, containerKey))
 
 							e.ListAttr = nil
-							c.Entries = append(c.Entries, g.parser.CreateContainerEntry(e, nil, nil, containerKey))
+							c.Entries = append(c.Entries, yparser.CreateContainerEntry(e, nil, nil, containerKey))
 
 						} else {
 							// add entry to the container, containerKey allows to see if a
-							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, nil, nil, containerKey))
+							cPtr.Entries = append(cPtr.Entries, yparser.CreateContainerEntry(e, nil, nil, containerKey))
 							// leafRef processing
-							localPath, remotePath, local := g.parser.ProcessLeafRefGnmi(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
+							localPath, remotePath, local := yparser.ProcessLeafRef(e, resPath, r.GetAbsoluteGnmiActualResourcePath())
 							if localPath != nil {
 								// validate if the leafrefs is a local leafref or an external leafref
 								if local {
@@ -250,20 +251,20 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 								Elem: make([]*gnmi.PathElem, 0),
 							}
 							// append the entry to the actual path of the resource
-							r.ActualPath.Elem = append(r.ActualPath.Elem, g.parser.CreatePathElem(e))
+							r.ActualPath.Elem = append(r.ActualPath.Elem, yparser.CreatePathElem(e))
 							// create a new container and apply to the root of the resource
 							r.Container = container.NewContainer(e.Name, g.IsResourceBoundary(resPath), nil)
 							// r.Container.Entries = append(r.Container.Entries, parser.CreateContainerEntry(e, nil, nil))
 							// append the container Ptr to the back of the list, to track the used container Pointers per level
 							// newLevel =0
-							r.SetRootContainerEntry(g.parser.CreateContainerEntry(e, nil, nil, containerKey))
+							r.SetRootContainerEntry(yparser.CreateContainerEntry(e, nil, nil, containerKey))
 							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
 							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], r.Container)
 							r.ContainerList = append(r.ContainerList, r.Container)
 
 						} else {
 							// append the entry to the actual path of the resource
-							r.ActualPath.Elem = append(r.ActualPath.Elem, g.parser.CreatePathElem(e))
+							r.ActualPath.Elem = append(r.ActualPath.Elem, yparser.CreatePathElem(e))
 							// create a new container for the next iteration
 							c := container.NewContainer(e.Name, g.IsResourceBoundary(resPath), cPtr)
 							if newLevel == 1 {
@@ -271,7 +272,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							}
 							// allocate container entry to the original container Pointer and append to the container entry list
 							// the next pointer of the entry points to the new container
-							cPtr.Entries = append(cPtr.Entries, g.parser.CreateContainerEntry(e, c, cPtr, containerKey))
+							cPtr.Entries = append(cPtr.Entries, yparser.CreateContainerEntry(e, c, cPtr, containerKey))
 							// append the container Ptr to the back of the list, to track the used container Pointers per level
 							// initialize the level
 							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)

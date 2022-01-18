@@ -107,7 +107,7 @@ func (g *Generator) WriteResourceHeader(r *resource.Resource) error {
 		ResourceNameWithPrefix: r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()),
 	}
 
-	if err := g.GetTemplate().ExecuteTemplate(r.ResFile, "resourceHeader"+".tmpl", s); err != nil {
+	if err := g.getTemplate().ExecuteTemplate(r.ResFile, "resourceHeader"+".tmpl", s); err != nil {
 		return err
 	}
 	return nil
@@ -123,7 +123,7 @@ func (g *Generator) WriteResourceContainers(r *resource.Resource, c *container.C
 		Entries: c.Entries,
 	}
 
-	if err := g.GetTemplate().ExecuteTemplate(r.ResFile, "resourceContainer"+".tmpl", s); err != nil {
+	if err := g.getTemplate().ExecuteTemplate(r.ResFile, "resourceContainer"+".tmpl", s); err != nil {
 		return err
 	}
 	return nil
@@ -146,7 +146,7 @@ func (g *Generator) WriteResourceEnd(r *resource.Resource) error {
 		ResourceNameWithPrefix: r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()),
 		HElements:              r.GetHierarchicalElements(),
 	}
-	if err := g.GetTemplate().ExecuteTemplate(r.ResFile, "resourceEnd"+".tmpl", s); err != nil {
+	if err := g.getTemplate().ExecuteTemplate(r.ResFile, "resourceEnd"+".tmpl", s); err != nil {
 		return err
 	}
 	return nil
@@ -163,7 +163,7 @@ func (g *Generator) WriteResourceLocalLeafRef(r *resource.Resource) error {
 		LeafRefs:     r.LocalLeafRefs,
 	}
 	//g.log.Debug("local leafrefs", "local leafref", r.LocalLeafRefs)
-	if err := g.GetTemplate().ExecuteTemplate(r.ResFile, "resourceLeafRef"+".tmpl", s); err != nil {
+	if err := g.getTemplate().ExecuteTemplate(r.ResFile, "resourceLeafRef"+".tmpl", s); err != nil {
 		return err
 	}
 	return nil
@@ -180,7 +180,7 @@ func (g *Generator) WriteResourceExternalLeafRef(r *resource.Resource) error {
 		LeafRefs:     r.ExternalLeafRefs,
 	}
 	//g.log.Debug("External leafrefs", "external leafref", r.LocalLeafRefs)
-	if err := g.GetTemplate().ExecuteTemplate(r.ResFile, "resourceLeafRef"+".tmpl", s); err != nil {
+	if err := g.getTemplate().ExecuteTemplate(r.ResFile, "resourceLeafRef"+".tmpl", s); err != nil {
 		return err
 	}
 	return nil
@@ -248,7 +248,7 @@ func (g *Generator) WriteContainer(f *os.File, c *container.Container) error {
 		LeafRefs:         c.GetLeafRefs(),
 	}
 	//g.log.Debug("External leafrefs", "external leafref", r.LocalLeafRefs)
-	if err := g.GetTemplate().ExecuteTemplate(f, "container.tmpl", s); err != nil {
+	if err := g.getTemplate().ExecuteTemplate(f, "container.tmpl", s); err != nil {
 		return err
 	}
 	return nil

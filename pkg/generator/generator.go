@@ -30,8 +30,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/yndd/ndd-runtime/pkg/logging"
-	"github.com/yndd/ndd-yang/pkg/parser"
 	"github.com/yndd/ndd-yang/pkg/resource"
+	"github.com/yndd/ndd-yang/pkg/yparser"
 	"github.com/yndd/ndd-ygen/pkg/templ"
 	"github.com/yndd/ndd-ygen/pkg/utils"
 	"gopkg.in/yaml.v2"
@@ -47,7 +47,7 @@ const (
 )
 
 type Generator struct {
-	parser *parser.Parser
+	//parser *parser.Parser
 	config *Config // holds the configuration for the generator
 	//ResourceConfig  map[string]*ResourceDetails // holds the configuration of the resources we should generate
 	resources    []*resource.Resource // holds the resources that are being generated
@@ -71,12 +71,6 @@ func WithDebug(d bool) Option {
 func WithLogging(l logging.Logger) Option {
 	return func(g *Generator) {
 		g.log = l
-	}
-}
-
-func WithParser(l logging.Logger) Option {
-	return func(g *Generator) {
-		g.parser = parser.NewParser(parser.WithLogger(l))
 	}
 }
 
@@ -143,9 +137,7 @@ func WithLocalRender(b bool) Option {
 // NewYangGoCodeGenerator function defines a new generator
 func NewGenerator(opts ...Option) (*Generator, error) {
 	g := &Generator{
-		parser: parser.NewParser(),
 		config: &Config{},
-		//ResourceConfig:  make(map[string]*ResourceDetails),
 		resources: make([]*resource.Resource, 0),
 	}
 
@@ -154,17 +146,14 @@ func NewGenerator(opts ...Option) (*Generator, error) {
 	}
 
 	// process templates to render the resources
-	/*
-		if g.GetLocalRender() {
-			if err := g.InitTemplates(); err != nil {
-				return nil, errors.New(errParseTemplate)
-			}
+	if g.GetLocalRender() {
+		if err := g.initTemplates(); err != nil {
+			return nil, errors.New(errParseTemplate)
 		}
-	*/
+	}
 
 	// Process resource
 	// Check if the resource input file exists
-	//fmt.Printf("resource input filename : %s\n", g.GetConfig().GetResourceMapInputFile())
 	if !utils.FileExists(g.GetConfig().GetResourceMapInputFile()) {
 		return nil, errors.New(errResourceInputFileDoesNotExist)
 	}
@@ -180,17 +169,19 @@ func NewGenerator(opts ...Option) (*Generator, error) {
 	}
 
 	// initialize the resources from the YAML input file, we start at the root level using "/" path
-
 	g.rootResource = resource.NewResource(nil)
 	g.resources = append(g.GetResources(), g.rootResource)
-	if err := g.InitializeResources(c.Path, "/", g.rootResource); err != nil {
-		return nil, errors.Wrap(err, errCannotInitializeResources)
+	if !g.GetConfig().GetResourceMapAll() {
+		if err := g.InitializeResources(c.Path, "/", g.rootResource); err != nil {
+			return nil, errors.Wrap(err, errCannotInitializeResources)
+		}
 	}
+	
 	// show the result of the processed resources
 	//g.ShowResources()
 
 	// initialize goyang, with the information supplied from the flags
-	g.entries, err = g.InitializeGoYang()
+	g.entries, err = g.initializeGoYang()
 	if err != nil {
 		return nil, err
 	}
@@ -210,14 +201,6 @@ func (g *Generator) GetRootResource() *resource.Resource {
 	return g.rootResource
 }
 
-func (g *Generator) GetEntries() []*yang.Entry {
-	return g.entries
-}
-
-func (g *Generator) GetTemplate() *template.Template {
-	return g.template
-}
-
 func (g *Generator) GetLocalRender() bool {
 	return g.localRender
 }
@@ -226,7 +209,15 @@ func (g *Generator) GetDebug() bool {
 	return g.debug
 }
 
-func (g *Generator) InitTemplates() error {
+func (g *Generator) getEntries() []*yang.Entry {
+	return g.entries
+}
+
+func (g *Generator) getTemplate() *template.Template {
+	return g.template
+}
+
+func (g *Generator) initTemplates() error {
 	var err error
 	g.template, err = templ.ParseTemplates("./templates/")
 	if err != nil {
@@ -235,183 +226,9 @@ func (g *Generator) InitTemplates() error {
 	return nil
 }
 
-func (g *Generator) ShowConfiguration() {
-	log := g.log.WithValues("API Group", g.GetConfig().GetApiGroup(),
-		"Version", g.GetConfig().GetVersion(),
-		"Config file", g.GetConfig().GetResourceMapInputFile(),
-		"Yang import directory", g.GetConfig().GetYangImportDirs())
-	log.Debug("Generator configuration")
-}
-
-func (g *Generator) ShowResources() {
-	for i, r := range g.GetResources() {
-		if r.GetParent() != nil {
-			fmt.Printf("Nbr: %d, Resource Path: %s, Exclude: %v, DependsOnPath: %v\n", i, *r.GetAbsoluteXPath(), r.GetExcludeRelativeXPath(), *g.parser.GnmiPathToXPath(r.GetParentPath(), false))
-		} else {
-			fmt.Printf("Nbr: %d, Resource Path: %s, Exclude: %v, DependsOn: %v\n", i, *r.GetAbsoluteXPath(), r.GetExcludeRelativeXPath(), r.GetParent())
-		}
-		fmt.Printf(" HierResourceElements: %v\n", r.GetHierResourceElements().GetHierResourceElements())
-		for _, subres := range r.GetActualSubResources() {
-			fmt.Printf("  Subsresource: %s\n", *g.parser.GnmiPathToXPath(subres, false))
-		}
-	}
-}
-
-func (g *Generator) ShowActualPathPerResource() {
-	for _, r := range g.GetActualResources() {
-		fmt.Printf("Resource Path: %s\n", *r.GetAbsoluteXPath())
-		/*
-			for _, pe := range r.GetActualGnmiFullPathWithKeys().GetElem() {
-				fmt.Printf("Path Element: PathElem Name: %s PathElem Key: %v\n", pe.GetName(), pe.GetKey())
-			}
-		*/
-	}
-}
-
-/*
-func (g *Generator) FindResource(p string) (*resource.Resource, error) {
-	fmt.Printf("find resource\n")
-	for _, r := range g.GetResources() {
-		fmt.Printf("find resource path %s %s\n", p, yparser.GnmiPath2XPath(r.Path, false))
-		if p == yparser.GnmiPath2XPath(r.Path, false) {
-			return r, nil
-		}
-	}
-	return nil, errors.New(errResourceNotFound)
-}
-*/
-
-// initializes the resource based on the YAML file input
-// The result is stored in the []*Resource list
-// A resource contains the relative information of the resource.
-// To DependsOn allows you to reference parent resources
-func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, parent *resource.Resource) error {
-	// when we want to generate the full resource e.g. for state use cases we just need
-	// the generic resourcePath and we dont need to process the individual paths in the resource file
-	// the first entry is sufficient
-	// we just take the first element of the path and we are done
-	/*
-		if g.GetConfig().GetResourceMapAll() {
-			for path := range pd {
-				opts := []resource.Option{
-					resource.WithXPath("/" + strings.Split(path, "/")[1]),
-				}
-				g.resources = append(g.GetResources(), resource.NewResource(opts...))
-				return nil
-			}
-		}
-	*/
-	for path, pathdetails := range pd {
-		g.log.Debug("Path information", "Path", path, "parent path", pp)
-		opts := []resource.Option{}
-		if pp == "/" {
-			// this is attached to the root resource
-
-			// initialize the module if this is a parent resource
-			// add resourcepath
-			opts = append(opts, resource.WithXPath(path))
-			// add subresources
-			//subResPaths := make([]*gnmi.Path, 0)
-			//if len(pathdetails.SubResources) == 0 {
-			// no subresources exists -> initialize with the resource path
-			//	subResPaths = append(subResPaths, g.parser.XpathToGnmiPath(path, 0))
-			//}
-			//for _, subres := range pathdetails.SubResources {
-			//	subResPaths = append(subResPaths, g.parser.XpathToGnmiPath(filepath.Join(path, subres), 0))
-			//}
-			//opts = append(opts, resource.WithSubResources(subResPaths))
-			// add module
-			opts = append(opts, resource.WithModule(strings.Split(path, "/")[1]))
-		} else {
-			// this is a hierarchical resource, find the hierarchical dependency
-
-			/*
-				// given the parent is given we can use this direct
-				r, err := g.FindResource(pp)
-				if err != nil {
-					g.log.Debug("Error cannot find resource", "parent path", pp)
-					return err
-				}
-			*/
-			//
-			/*
-				split := strings.Split(path, "/")
-			*/
-			// if the hierarchical path consists of multiple path only the last element of the
-			// hierarchical path is relevant in the hierarchical context
-			// the other path elements reside in the parent resource and hence will be part of the
-			// dependency path
-			/*
-				fmt.Printf("Path: %s, Parent Path: %s, split: %v\n", path, yparser.GnmiPath2XPath(parent.Path, false), split[:len(split)-1])
-				dp := g.parser.DeepCopyGnmiPath(parent.Path)
-				if len(split) > 1 {
-					// start from 1 avoid a white space to be added
-					for i := 1; i < len(split); i++ {
-						dp = g.parser.AppendElemInGnmiPath(dp, split[i], []string{})
-					}
-				}
-				fmt.Printf("Parent Path2: %s\n", yparser.GnmiPath2XPath(dp, false))
-			*/
-			//if len(split) -1 > 0 {
-			//	opts = append(opts, resource.WithSubDepPath(split[:len(split)-1]))
-			//}
-			opts = append(opts, resource.WithXPath(path))
-			/*
-				// the resource path is only consisting of the last element of the hierarchical path
-				opts = append(opts, resource.WithXPath("/"+split[len(split)-1]))
-				// add resource dependency with dependency path
-				opts = append(opts, resource.WithParentPath(dp))
-			*/
-			//opts = append(opts, resource.WithParent(r))
-			// add subresources
-			//subResPaths := make([]*gnmi.Path, 0)
-			//if len(pathdetails.SubResources) == 0 {
-			// no subresources exists -> initialize with the resource path
-			//	subResPaths = append(subResPaths, g.parser.XpathToGnmiPath("/"+split[len(split)-1], 0))
-			//}
-			//for _, subres := range pathdetails.SubResources {
-			//	subResPaths = append(subResPaths, g.parser.XpathToGnmiPath(filepath.Join("/"+split[len(split)-1], subres), 0))
-			//}
-			//opts = append(opts, resource.WithSubResources(subResPaths))
-			// add module
-			opts = append(opts, resource.WithModule(strings.Split(path, "/")[1]))
-			// add module
-			opts = append(opts, resource.WithModule(parent.GetModule()))
-		}
-
-		// exclude belongs to the previous resource and hence we have to
-		// append the exclude element info to the previous path
-		for _, e := range pathdetails.Excludes {
-			g.log.Debug("Exludes", "Exclude", e)
-			opts = append(opts, resource.WithExclude(filepath.Join(path, "/", e)))
-		}
-
-		// initialize the resource before processing the next hierarchy since the process will check
-		// the dependency and if not initialized the parent resource will not be found.
-		newResource := resource.NewResource(parent, opts...)
-		fmt.Printf("new reosurce path: %s\n", *newResource.GetAbsoluteXPath())
-		parent.AddChild(newResource)
-		g.resources = append(g.GetResources(), newResource)
-		if pathdetails.Hierarchy != nil {
-			// run the procedure in a hierarchical way, offset is 0 since the resource does not have
-			// a duplicate element in the path
-			for hpath := range pathdetails.Hierarchy {
-				//fmt.Printf("hpath: %s\n", hpath)
-				g.GetResources()[len(g.GetResources())-1].GetHierResourceElement().AddHierResourceElement(hpath)
-			}
-
-			if err := g.InitializeResources(pathdetails.Hierarchy, path, newResource); err != nil {
-				return err
-			}
-		}
-
-	}
-	return nil
-}
-
 // GOYANG processing
 // Read and validate the import directory with yang module
-func (g *Generator) InitializeGoYang() ([]*yang.Entry, error) {
+func (g *Generator) initializeGoYang() ([]*yang.Entry, error) {
 	// GOYANG processing
 	// Read and validate the import directory with yang module
 	for _, path := range g.GetConfig().GetYangImportDirs() {
@@ -484,7 +301,7 @@ func (g *Generator) InitializeGoYang() ([]*yang.Entry, error) {
 
 func (g *Generator) Run() error {
 	// Augment the data
-	for _, e := range g.GetEntries() {
+	for _, e := range g.getEntries() {
 		//g.log.Debug("Yang global Entry: ", "Nbr", i, "Name", e.Name)
 
 		// initialize an empty path
@@ -496,4 +313,88 @@ func (g *Generator) Run() error {
 		}
 	}
 	return nil
+}
+
+// initializes the resource based on the YAML file input or generate all individual container entries
+// The result is stored in the []*Resource list
+// A resource contains the relative information of the resource.
+// we generate both a resource list as well as a linked list with parent and child
+func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, parent *resource.Resource) error {
+	for path, pathdetails := range pd {
+		g.log.Debug("Path information", "Path", path, "parent path", pp)
+		opts := []resource.Option{}
+		if pp == "/" {
+			// this is attached to the root resource
+
+			// initialize options that will be used in the resource
+			// add resourcepath
+			opts = append(opts, resource.WithXPath(path))
+			// add module
+			opts = append(opts, resource.WithModule(strings.Split(path, "/")[1]))
+		} else {
+			// this is a hierarchical resource
+			
+			// add resourcepath
+			opts = append(opts, resource.WithXPath(path))
+			// add module
+			opts = append(opts, resource.WithModule(parent.GetModule()))
+		}
+
+		// exclude belongs to the previous resource and hence we have to
+		// append the exclude element info to the previous path
+		for _, e := range pathdetails.Excludes {
+			g.log.Debug("Exludes", "Exclude", e)
+			opts = append(opts, resource.WithExclude(filepath.Join(path, "/", e)))
+		}
+
+		// initialize the resource
+		newResource := resource.NewResource(parent, opts...)
+		fmt.Printf("new resource path: %s\n", *newResource.GetAbsoluteXPath())
+		parent.AddChild(newResource)
+		g.resources = append(g.GetResources(), newResource)
+		if pathdetails.Hierarchy != nil {
+			// run the procedure in a hierarchical way, offset is 0 since the resource does not have
+			// a duplicate element in the path
+			/*
+			for hpath := range pathdetails.Hierarchy {
+				g.GetResources()[len(g.GetResources())-1].GetHierResourceElement().AddHierResourceElement(hpath)
+			}
+			*/
+
+			// run the resource mapping in a hierarchical way
+			if err := g.InitializeResources(pathdetails.Hierarchy, path, newResource); err != nil {
+				return err
+			}
+		}
+
+	}
+	return nil
+}
+
+func (g *Generator) ShowConfiguration() {
+	log := g.log.WithValues("API Group", g.GetConfig().GetApiGroup(),
+		"Version", g.GetConfig().GetVersion(),
+		"Config file", g.GetConfig().GetResourceMapInputFile(),
+		"Yang import directory", g.GetConfig().GetYangImportDirs())
+	log.Debug("Generator configuration")
+}
+
+func (g *Generator) ShowResources() {
+	for i, r := range g.GetResources() {
+		if r.GetParent() != nil {
+			fmt.Printf("Nbr: %d, Resource Path: %s, Exclude: %v, DependsOnPath: %v\n", i, *r.GetAbsoluteXPath(), r.GetExcludeRelativeXPath(), yparser.GnmiPath2XPath(r.GetParentPath(), false))
+		} else {
+			fmt.Printf("Nbr: %d, Resource Path: %s, Exclude: %v, DependsOn: %v\n", i, *r.GetAbsoluteXPath(), r.GetExcludeRelativeXPath(), r.GetParent())
+		}
+		//fmt.Printf(" HierResourceElements: %v\n", r.GetHierResourceElements().GetHierResourceElements())
+		//for _, subres := range r.GetActualSubResources() {
+		//	fmt.Printf("  Subsresource: %s\n", yparser.GnmiPath2XPath(subres, false))
+		//}
+	}
+}
+
+func (g *Generator) ShowActualPathPerResource() {
+	for _, r := range g.GetActualResources() {
+		fmt.Printf("Resource Path: %s\n", *r.GetAbsoluteXPath())
+	}
 }
