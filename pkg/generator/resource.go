@@ -183,8 +183,52 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 						cPtr = r.ContainerLevelKeys[newLevel-1][len(r.ContainerLevelKeys[newLevel-1])-1]
 					}
 					//fmt.Printf("xpath: %s, resPath: %s, level: %d\n", *r.GetAbsoluteXPathWithoutKey(), resPath, r.ContainerLevel)
-					// Leaf processing
-					if e.Kind.String() == "Leaf" {
+
+					if e.Kind.String() != "Leaf" {
+						// List processing with or without a key
+						// fmt.Printf("List Name: %s, ResPath: %s \n", e.Name, resPath)
+						// newLevel = 0 is special since we have to initialize the container
+						// for newLevl = 0 we do not have to rely on the cPtr, since there is no cPtr initialized yet
+						// for newLevl = 0 we dont create an entry in the container but we create a root container entry
+						if newLevel == 0 {
+							/*
+								// Allocate a new actual path in the resource
+								r.ActualPath = &gnmi.Path{
+									Elem: make([]*gnmi.PathElem, 0),
+								}
+								// append the entry to the actual path of the resource
+								r.ActualPath.Elem = append(r.ActualPath.Elem, yparser.CreatePathElem(e))
+							*/
+							// create a new container and apply to the root of the resource
+							r.Container = container.NewContainer(e.Name, g.IsResourceBoundary(resPath), nil)
+							// r.Container.Entries = append(r.Container.Entries, parser.CreateContainerEntry(e, nil, nil))
+							// append the container Ptr to the back of the list, to track the used container Pointers per level
+							// newLevel =0
+							r.SetRootContainerEntry(yparser.CreateContainerEntry(e, nil, nil, containerKey))
+							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
+							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], r.Container)
+							r.ContainerList = append(r.ContainerList, r.Container)
+
+						} else {
+							/*
+								// append the entry to the actual path of the resource
+								r.ActualPath.Elem = append(r.ActualPath.Elem, yparser.CreatePathElem(e))
+							*/
+							// create a new container for the next iteration
+							c := container.NewContainer(e.Name, g.IsResourceBoundary(resPath), cPtr)
+							if newLevel == 1 {
+								r.RootContainerEntry.Next = c
+							}
+							// allocate container entry to the original container Pointer and append to the container entry list
+							// the next pointer of the entry points to the new container
+							cPtr.Entries = append(cPtr.Entries, yparser.CreateContainerEntry(e, c, cPtr, containerKey))
+							// append the container Ptr to the back of the list, to track the used container Pointers per level
+							// initialize the level
+							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
+							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], c)
+							r.ContainerList = append(r.ContainerList, c)
+						}
+					} else { // // Leaf processing
 						//fmt.Printf("Leaf Name: %s, ResPath: %s \n", e.Name, resPath)
 						//fmt.Printf("Entry: Name: %s, Dir: %#v, Type: %v, Units: %s, List: %v\n", e.Name, e.Dir, g.parser.GetTypeName(e), e.Units, e.ListAttr)
 						/*
@@ -192,7 +236,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 								fmt.Printf("Entry: Name: %s Enum: %v\n", e.Name, e.Type.Enum.Names())
 							}
 						*/
-						// leaflist we create a container
+						// leaflist we create an additional container
 						if e.ListAttr != nil {
 							dummyYangEntry := &yang.Entry{
 								Name:     e.Name,
@@ -237,47 +281,6 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 									}
 								*/
 							}
-						}
-
-					} else { // List processing with or without a key
-
-						// fmt.Printf("List Name: %s, ResPath: %s \n", e.Name, resPath)
-						// newLevel = 0 is special since we have to initialize the container
-						// for newLevl = 0 we do not have to rely on the cPtr, since there is no cPtr initialized yet
-						// for newLevl = 0 we dont create an entry in the container but we create a root container entry
-						if newLevel == 0 {
-							// Allocate a new actual path in the resource
-							r.ActualPath = &gnmi.Path{
-								Elem: make([]*gnmi.PathElem, 0),
-							}
-							// append the entry to the actual path of the resource
-							r.ActualPath.Elem = append(r.ActualPath.Elem, yparser.CreatePathElem(e))
-							// create a new container and apply to the root of the resource
-							r.Container = container.NewContainer(e.Name, g.IsResourceBoundary(resPath), nil)
-							// r.Container.Entries = append(r.Container.Entries, parser.CreateContainerEntry(e, nil, nil))
-							// append the container Ptr to the back of the list, to track the used container Pointers per level
-							// newLevel =0
-							r.SetRootContainerEntry(yparser.CreateContainerEntry(e, nil, nil, containerKey))
-							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
-							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], r.Container)
-							r.ContainerList = append(r.ContainerList, r.Container)
-
-						} else {
-							// append the entry to the actual path of the resource
-							r.ActualPath.Elem = append(r.ActualPath.Elem, yparser.CreatePathElem(e))
-							// create a new container for the next iteration
-							c := container.NewContainer(e.Name, g.IsResourceBoundary(resPath), cPtr)
-							if newLevel == 1 {
-								r.RootContainerEntry.Next = c
-							}
-							// allocate container entry to the original container Pointer and append to the container entry list
-							// the next pointer of the entry points to the new container
-							cPtr.Entries = append(cPtr.Entries, yparser.CreateContainerEntry(e, c, cPtr, containerKey))
-							// append the container Ptr to the back of the list, to track the used container Pointers per level
-							// initialize the level
-							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
-							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], c)
-							r.ContainerList = append(r.ContainerList, c)
 						}
 					}
 				}

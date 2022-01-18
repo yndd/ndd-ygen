@@ -25,7 +25,6 @@ import (
 	"github.com/stoewer/go-strcase"
 	"github.com/yndd/ndd-yang/pkg/container"
 	"github.com/yndd/ndd-yang/pkg/leafref"
-	"github.com/yndd/ndd-yang/pkg/parser"
 	"github.com/yndd/ndd-yang/pkg/resource"
 	"github.com/yndd/ndd-yang/pkg/yparser"
 )
@@ -39,7 +38,7 @@ func (g *Generator) Render() error {
 		for _, c := range r.ContainerList {
 			fmt.Printf("Render Container: %s\n", c.GetFullName())
 		}
-		r.AssignFileName(g.GetConfig().GetPrefix(), "_types.go")
+		//r.AssignFileName(g.GetConfig().GetPrefix(), "_types.go")
 		/*
 			if err := r.CreateFile(g.GetConfig().GetOutputDir(), "api", g.GetConfig().GetVersion()); err != nil {
 				return err
@@ -152,6 +151,7 @@ func (g *Generator) WriteResourceEnd(r *resource.Resource) error {
 	return nil
 }
 
+/*
 func (g *Generator) WriteResourceLocalLeafRef(r *resource.Resource) error {
 	s := struct {
 		Kind         string
@@ -168,7 +168,8 @@ func (g *Generator) WriteResourceLocalLeafRef(r *resource.Resource) error {
 	}
 	return nil
 }
-
+*/
+/*
 func (g *Generator) WriteResourceExternalLeafRef(r *resource.Resource) error {
 	s := struct {
 		Kind         string
@@ -185,6 +186,7 @@ func (g *Generator) WriteResourceExternalLeafRef(r *resource.Resource) error {
 	}
 	return nil
 }
+*/
 
 func (g *Generator) RenderSchema() error {
 	for _, r := range g.GetResources() {
