@@ -200,7 +200,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 								r.ActualPath.Elem = append(r.ActualPath.Elem, yparser.CreatePathElem(e))
 							*/
 							// create a new container and apply to the root of the resource
-							r.RootContainer = container.NewContainer(e.Name, g.IsResourceBoundary(resPath), nil)
+							r.RootContainer = container.NewContainer(e.Name, e.ReadOnly(), g.IsResourceBoundary(resPath), nil)
 							// r.Container.Entries = append(r.Container.Entries, parser.CreateContainerEntry(e, nil, nil))
 							// append the container Ptr to the back of the list, to track the used container Pointers per level
 							// newLevel =0
@@ -215,7 +215,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 								r.ActualPath.Elem = append(r.ActualPath.Elem, yparser.CreatePathElem(e))
 							*/
 							// create a new container for the next iteration
-							c := container.NewContainer(e.Name, g.IsResourceBoundary(resPath), cPtr)
+							c := container.NewContainer(e.Name, e.ReadOnly(), g.IsResourceBoundary(resPath), cPtr)
 							if newLevel == 1 {
 								r.RootContainerEntry.Next = c
 							}
@@ -243,7 +243,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 								Name:     e.Name,
 								ListAttr: e.ListAttr,
 							}
-							c := container.NewContainer(dummyYangEntry.Name, g.IsResourceBoundary(resPath), cPtr)
+							c := container.NewContainer(dummyYangEntry.Name, e.ReadOnly(), g.IsResourceBoundary(resPath), cPtr)
 							r.ContainerList = append(r.ContainerList, c)
 							cPtr.Entries = append(cPtr.Entries, yparser.CreateContainerEntry(dummyYangEntry, c, cPtr, containerKey))
 
