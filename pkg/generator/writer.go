@@ -24,6 +24,7 @@ import (
 	"github.com/stoewer/go-strcase"
 	"github.com/yndd/ndd-yang/pkg/container"
 	"github.com/yndd/ndd-yang/pkg/leafref"
+	"github.com/yndd/ndd-yang/pkg/yparser"
 )
 
 func (g *Generator) Render() error {
@@ -31,7 +32,7 @@ func (g *Generator) Render() error {
 	for _, r := range g.GetActualResources()[1:] {
 		fmt.Printf("Resource: %s\n", r.GetResourcePath())
 		fmt.Printf("Render Resource: %s\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()))
-		//fmt.Printf("Render Resource path: %s\n", yparser.GnmiPath2XPath(r.GetActualGnmiFullPathWithKeys(), true))
+		fmt.Printf("Render Resource path: %s\n", yparser.GnmiPath2XPath(r.GetActualGnmiFullPathWithKeys(), true))
 		for _, c := range r.ContainerList {
 			fmt.Printf("Render Container: %s\n", c.GetFullName())
 		}
@@ -194,13 +195,7 @@ func (g *Generator) RenderSchema() error {
 	for _, r := range g.GetResources() {
 		for _, c := range r.ContainerList {
 			fmt.Printf("Container FullName %s\n", c.GetFullNameWithRoot())
-			//fmt.Printf("Container Name %s\n", c.GetName())
-			//fmt.Printf("Container Keys %s\n", c.GetKeyNames())
-			//fmt.Printf("Container Children %s\n", c.GetChildren())
-			//fmt.Printf("Container ResourceVoundary %s\n", c.GetResourceBoundary())
-			//for _, e := range c.GetEntries() {
-			//	fmt.Printf("Container Entry Name: %v, Key: %v, Type: %v %v\n", e.GetName(), e.GetKey(), e.GetType(), e.Mandatory)
-			//}
+			
 
 			f, err := os.Create(filepath.Join(g.GetConfig().GetOutputDir(), "yangschema", strcase.LowerCamelCase(c.GetFullNameWithRoot())+".go"))
 			if err != nil {

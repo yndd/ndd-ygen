@@ -165,9 +165,9 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 				case e.RPC != nil:
 				case e.ReadOnly():
 					// when the resourcemapAll flag is true we also generate the read-only leafs
-					if !g.GetConfig().GetResourceMapAll() {
-						break
-					}
+					//if !g.GetConfig().GetResourceMapAll() {
+					//	break
+					//}
 					fallthrough
 				default: // this is a RW config element in yang or both
 					// find the containerPointer
@@ -184,6 +184,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 					//fmt.Printf("xpath: %s, resPath: %s, level: %d\n", *r.GetAbsoluteXPathWithoutKey(), resPath, r.ContainerLevel)
 
 					if e.Kind.String() != "Leaf" {
+						//fmt.Printf("State Info container/list: state info: %t entry name: %s \n", e.ReadOnly(), e.Name)
 						// List processing with or without a key
 						// fmt.Printf("List Name: %s, ResPath: %s \n", e.Name, resPath)
 						// newLevel = 0 is special since we have to initialize the container
@@ -228,6 +229,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							r.ContainerList = append(r.ContainerList, c)
 						}
 					} else { // // Leaf processing
+						//fmt.Printf("State Info leaf: state info: %t entry name: %s \n", e.ReadOnly(), e.Name)
 						//fmt.Printf("Leaf Name: %s, ResPath: %s \n", e.Name, resPath)
 						//fmt.Printf("Entry: Name: %s, Dir: %#v, Type: %v, Units: %s, List: %v\n", e.Name, e.Dir, g.parser.GetTypeName(e), e.Units, e.ListAttr)
 						/*
