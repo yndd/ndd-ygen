@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	//"fmt"
 
 	"github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/openconfig/goyang/pkg/yang"
@@ -158,10 +157,10 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 		if !choice {
 			resPath += filepath.Join("/", e.Name)
 			newdynPath.Elem = append(newdynPath.Elem, (*gnmi.PathElem)(yparser.CreatePathElem(e)))
-			//fmt.Printf("resource path: %s \n", *g.parser.GnmiPathToXPath(dynPath, false))
+			//fmt.Printf("resource path: %s, stateChild %t \n", yparser.GnmiPath2XPath(dynPath, false), stateChild)
 
 			if r, ok := g.DoesResourceMatch(newdynPath); ok {
-				//fmt.Printf("match path: %s \n", yparser.GnmiPath2XPath(r.GetAbsolutePath(), false))
+				//fmt.Printf("match path: %s, dyn path: %s \n", yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), yparser.GnmiPath2XPath(dynPath, false))
 				switch {
 				case e.RPC != nil:
 				case e.ReadOnly():
@@ -169,6 +168,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 					//if !g.GetConfig().GetResourceMapAll() {
 					//	break
 					//}
+
 					fallthrough
 				default: // this is a RW config element in yang or both
 					// find the containerPointer
@@ -181,6 +181,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 						r.ContainerLevel = newLevel
 
 						cPtr = r.ContainerLevelKeys[newLevel-1][len(r.ContainerLevelKeys[newLevel-1])-1]
+
 					}
 					//fmt.Printf("xpath: %s, resPath: %s, level: %d\n", *r.GetAbsoluteXPathWithoutKey(), resPath, r.ContainerLevel)
 
@@ -300,7 +301,11 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 		// 2. e.key is supplied to the next iteration as this identifies the key that is used at the containerlevel
 		// the key is resolved with the name in the next level resolution and this is how we can identify
 		// if a entry (which is the key name) is mandatory or not
-		g.ResourceGenerator(resPath, newdynPath, e.Dir[k], e.IsChoice(), e.Key)
+		var err error
+		if err = g.ResourceGenerator(resPath, newdynPath, e.Dir[k], e.IsChoice(), e.Key); err != nil {
+			return nil
+		}
+		//fmt.Printf("recursive: path: %s, entryName: %s\n", newdynPath, e.Dir[k].Name)
 	}
 	return nil
 }

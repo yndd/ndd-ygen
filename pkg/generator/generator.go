@@ -312,7 +312,26 @@ func (g *Generator) Run() error {
 			return err
 		}
 	}
+	// updates the container has state
+	g.updateContainerStateChildStatus()
 	return nil
+}
+
+// updateContainerStateChildStatus updates the container HAs state info.
+// we first look at the entries and if one has state, we update the state from bottom to top
+func (g *Generator) updateContainerStateChildStatus() {
+	for _, r := range g.GetActualResources()[1:] {
+		for _, c := range r.ContainerList {
+			for _, e := range c.GetEntries() {
+				if e.ReadOnly {
+					c.SetHasState()
+				}
+			}
+			if c.HasState {
+				c.UpdateHasState2ParentContainers()
+			}
+		}
+	}
 }
 
 // initializes the resource based on the YAML file input or generate all individual container entries
