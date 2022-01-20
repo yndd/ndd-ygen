@@ -129,7 +129,7 @@ func WithPrefix(s string) Option {
 	}
 }
 
-func WithHeathStatus(b bool) Option {
+func WithHealthStatus(b bool) Option {
 	return func(g *Generator) {
 		g.healthStatus = b
 	}
