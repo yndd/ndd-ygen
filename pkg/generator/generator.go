@@ -55,6 +55,7 @@ type Generator struct {
 	entries      []*yang.Entry // Yang entries parsed from the yang files
 	template     *template.Template
 	log          logging.Logger
+	healthStatus bool
 	localRender  bool
 	debug        bool
 }
@@ -125,6 +126,12 @@ func WithAPIGroup(s string) Option {
 func WithPrefix(s string) Option {
 	return func(g *Generator) {
 		g.config.prefix = s
+	}
+}
+
+func WithHeathStatus(b bool) Option {
+	return func(g *Generator) {
+		g.healthStatus = b
 	}
 }
 

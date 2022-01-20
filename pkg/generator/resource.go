@@ -164,10 +164,10 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 				switch {
 				case e.RPC != nil:
 				case e.ReadOnly():
-					// when the resourcemapAll flag is true we also generate the read-only leafs
-					//if !g.GetConfig().GetResourceMapAll() {
-					//	break
-					//}
+					// when we dont need status we break
+					if !g.healthStatus {
+						break
+					}
 
 					fallthrough
 				default: // this is a RW config element in yang or both

@@ -28,6 +28,7 @@ var (
 	yangImportDirs       []string
 	yangModuleDirs       []string
 	resourceMapInputFile string
+	healthState          bool
 	resourceMapAll       bool
 	resourceschema       bool
 	outputDir            string
@@ -53,6 +54,7 @@ var generateCmd = &cobra.Command{
 		log.Debug("generate provider ...")
 
 		opts := []generator.Option{
+			generator.WithHeathStatus(healthState),
 			generator.WithYangImportDirs(yangImportDirs),
 			generator.WithYangModuleDirs(yangModuleDirs),
 			generator.WithResourceMapInputFile(resourceMapInputFile),
@@ -78,7 +80,6 @@ var generateCmd = &cobra.Command{
 			return err
 		}
 
-		
 		if !resourceschema {
 			if err := g.Render(); err != nil {
 				log.Debug("Error", "error", err)
@@ -90,7 +91,7 @@ var generateCmd = &cobra.Command{
 				return err
 			}
 		}
-		
+
 		g.ShowActualPathPerResource()
 
 		return nil
@@ -109,4 +110,5 @@ func init() {
 	generateCmd.Flags().StringVarP(&apiGroup, "apiGroup", "g", "srl.ndd.henderiw.be", "The group of the api to geenrate")
 	generateCmd.Flags().StringVarP(&prefix, "prefix", "a", "srl", "The prefix that is added to the kubernetes api resource")
 	generateCmd.Flags().BoolVarP(&resourceschema, "schema", "x", false, "The schema flag allows to generate the yang schema")
+	generateCmd.Flags().BoolVarP(&healthState, "health-state", "s", false, "The schema needs healthstate")
 }
