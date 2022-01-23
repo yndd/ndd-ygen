@@ -69,6 +69,36 @@ func (g *Generator) GetActualResources() []*resource.Resource {
 	return g.GetResources()
 }
 
+func (g *Generator) FindBestMatchAllResources(inputPath *gnmi.Path) bool {
+	found := false
+	for _, r := range g.GetActualResources()[1:] {
+		// max resource path length is 2, it should never be smaller than 2 either
+		rPath := yparser.DeepCopyGnmiPath(r.GetAbsolutePath())
+		pe := rPath.GetElem()
+		if len(pe) > 2 {
+			pe = pe[:2]
+		}
+		// if the input path is smaller than the resource we know there is no match
+		if len(pe) <= len(inputPath.GetElem()) {
+			// given we know the input PathElem are >= the resource Elements we can compare
+			// the elements using the index of the resource PathElem
+			for i, PathElem := range pe {
+				// if the name of the PathElem don't match this is not a resource that matches
+				if PathElem.GetName() != inputPath.GetElem()[i].GetName() {
+					found = false
+					break
+				} else {
+					found = true
+				}
+			}
+			if found {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // FindBestMatchfinds the resource that has the best match, otherwise the resource is not found
 // it uses the pathElem names to compare between the resource path and the input path
 func (g *Generator) FindBestMatch(inputPath *gnmi.Path) (*resource.Resource, bool) {
@@ -139,21 +169,25 @@ func (g *Generator) ifExcluded(path *gnmi.Path, excludePaths []*gnmi.Path) bool 
 func (g *Generator) DoesResourceMatch(path *gnmi.Path) (*resource.Resource, bool) {
 	//fmt.Printf("Path: %s\n", yparser.GnmiPath2XPath(path, true))
 
-	// this is the regular case
-	if r, ok := g.FindBestMatch(path); ok {
-
-		//fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
-		// check excludes
-		if g.ifExcluded(path, r.Excludes) {
-			return r, false
-		}
-		if g.GetConfig().GetResourceMapAll() {
+	if g.GetConfig().GetResourceMapAll() {
+		if g.FindBestMatchAllResources(path) {
 			return g.rootResource, true
 		}
-		return r, true
-	}
+		return nil, false
 
-	return nil, false
+	} else {
+		// this is the regular case
+		if r, ok := g.FindBestMatch(path); ok {
+
+			//fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
+			// check excludes
+			if g.ifExcluded(path, r.Excludes) {
+				return r, false
+			}
+			return r, true
+		}
+		return nil, false
+	}
 
 }
 
@@ -185,7 +219,6 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 					// newLevel = 0 since there is no container yet we cannot find the container Pointer, since it is not created so far
 					//newLevel := strings.Count(resPath, "/") - strings.Count(yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), "/")
 					var newLevel int
-					fmt.Printf("g.GetConfig().GetResourceMapAll(): %t\n", g.GetConfig().GetResourceMapAll())
 					if g.GetConfig().GetResourceMapAll() {
 						newLevel = strings.Count(resPath, "/") - 2
 					} else {

@@ -92,7 +92,7 @@ var generateCmd = &cobra.Command{
 			}
 		}
 
-		g.ShowActualPathPerResource()
+		//g.ShowActualPathPerResource()
 
 		return nil
 	},
