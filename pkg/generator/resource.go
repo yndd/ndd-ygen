@@ -185,6 +185,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 					// newLevel = 0 since there is no container yet we cannot find the container Pointer, since it is not created so far
 					//newLevel := strings.Count(resPath, "/") - strings.Count(yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), "/")
 					var newLevel int
+					fmt.Printf("g.GetConfig().GetResourceMapAll(): %t\n", g.GetConfig().GetResourceMapAll())
 					if g.GetConfig().GetResourceMapAll() {
 						newLevel = strings.Count(resPath, "/") - 2
 					} else {
