@@ -209,11 +209,10 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 						if newLevel == 0 {
 							// create a new container and apply to the root of the resource
 							c := container.NewContainer(e.Name, e.ReadOnly(), g.IsResourceBoundary(resPath), r.RootContainer)
-							if g.GetConfig().GetResourceMapAll() {
-								r.RootContainer.AddContainerChild(c)
-							} else {
+							if !g.GetConfig().GetResourceMapAll() {
 								r.RootContainer = c
 							}
+							r.RootContainer.AddContainerChild(c)
 
 							// append the container Ptr to the back of the list, to track the used container Pointers per level
 							// newLevel =0
