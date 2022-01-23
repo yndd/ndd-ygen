@@ -21,7 +21,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/stoewer/go-strcase"
 	"github.com/yndd/ndd-yang/pkg/container"
 	"github.com/yndd/ndd-yang/pkg/leafref"
 	"github.com/yndd/ndd-yang/pkg/yparser"
@@ -35,9 +34,9 @@ func (g *Generator) Render() error {
 		fmt.Printf("Render Resource path: %s\n", yparser.GnmiPath2XPath(r.GetActualGnmiFullPathWithKeys(), true))
 		for _, c := range r.ContainerList {
 			fmt.Printf("Render Container: HasState: %t, name: %s\n", c.HasState, c.GetFullName())
-			for _, e := range c.GetEntries() {
-				fmt.Printf("  Render Container Entry: state: %t, name: %s\n", e.ReadOnly, e.Name)
-			}
+			//for _, e := range c.GetEntries() {
+			//	fmt.Printf("  Render Container Entry: state: %t, name: %s\n", e.ReadOnly, e.Name)
+			//}
 		}
 		//r.AssignFileName(g.GetConfig().GetPrefix(), "_types.go")
 		/*
@@ -195,25 +194,35 @@ func (g *Generator) WriteResourceExternalLeafRef(r *resource.Resource) error {
 */
 
 func (g *Generator) RenderSchema() error {
-	for _, r := range g.GetResources() {
-		for _, c := range r.ContainerList {
-			fmt.Printf("Container FullName %s\n", c.GetFullNameWithRoot())
-			
+	if err := g.renderSchema(g.GetResources()[0].RootContainer); err != nil {
+		return err
+	}
 
-			f, err := os.Create(filepath.Join(g.GetConfig().GetOutputDir(), "yangschema", strcase.LowerCamelCase(c.GetFullNameWithRoot())+".go"))
-			if err != nil {
-				return err
-			}
+	return nil
+}
 
-			if err := g.WriteContainer(f, c); err != nil {
-				g.log.Debug("Write container error", "error", err)
-				return err
-			}
+func (g *Generator) renderSchema(c *container.Container) error {
+	fmt.Printf("Container FullName %s\n", c.GetFullNameWithRoot())
 
-			if err := f.Close(); err != nil {
-				return err
-			}
+	f, err := os.Create(filepath.Join(g.GetConfig().GetOutputDir(), "yangschema", c.GetFullNameWithRoot()+".go"))
+	if err != nil {
+		return err
+	}
+
+	if err := g.WriteContainer(f, c); err != nil {
+		g.log.Debug("Write container error", "error", err)
+		return err
+	}
+
+	if err := f.Close(); err != nil {
+		return err
+	}
+
+	for _, c := range c.Children {
+		if err := g.renderSchema(c); err != nil {
+			return err
 		}
+
 	}
 	return nil
 }
@@ -245,7 +254,7 @@ func (g *Generator) WriteContainer(f *os.File, c *container.Container) error {
 		Name:             c.GetName(),
 		FullName:         c.GetFullNameWithRoot(),
 		Keys:             c.GetKeyNames(),
-		Children:         c.GetChildren(),
+		Children:         c.GetChildrenNames(),
 		ResourceBoundary: c.GetResourceBoundary(),
 		LeafRefs:         c.GetLeafRefs(),
 	}

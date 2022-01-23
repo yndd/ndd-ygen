@@ -178,11 +178,11 @@ func NewGenerator(opts ...Option) (*Generator, error) {
 	// initialize the resources from the YAML input file, we start at the root level using "/" path
 	g.rootResource = resource.NewResource(nil)
 	g.resources = append(g.GetResources(), g.rootResource)
-	if !g.GetConfig().GetResourceMapAll() {
-		if err := g.InitializeResources(c.Path, "/", g.rootResource); err != nil {
-			return nil, errors.Wrap(err, errCannotInitializeResources)
-		}
+	//if !g.GetConfig().GetResourceMapAll() {
+	if err := g.InitializeResources(c.Path, "/", g.rootResource); err != nil {
+		return nil, errors.Wrap(err, errCannotInitializeResources)
 	}
+	//}
 
 	// show the result of the processed resources
 	//g.ShowResources()
@@ -347,7 +347,7 @@ func (g *Generator) updateContainerStateChildStatus() {
 // we generate both a resource list as well as a linked list with parent and child
 func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, parent *resource.Resource) error {
 	for path, pathdetails := range pd {
-		g.log.Debug("Path information", "Path", path, "parent path", pp)
+		//g.log.Debug("Path information", "Path", path, "parent path", pp)
 		opts := []resource.Option{}
 		if pp == "/" {
 			// this is attached to the root resource
@@ -375,7 +375,7 @@ func (g *Generator) InitializeResources(pd map[string]PathDetails, pp string, pa
 
 		// initialize the resource
 		newResource := resource.NewResource(parent, opts...)
-		fmt.Printf("new resource path: %s\n", yparser.GnmiPath2XPath(newResource.GetAbsolutePath(), false))
+		//fmt.Printf("new resource path: %s\n", yparser.GnmiPath2XPath(newResource.GetAbsolutePath(), false))
 		parent.AddChild(newResource)
 		g.resources = append(g.GetResources(), newResource)
 		if pathdetails.Hierarchy != nil {

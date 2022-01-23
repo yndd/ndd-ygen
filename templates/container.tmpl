@@ -14,17 +14,17 @@ import (
     "github.com/yndd/ndd-yang/pkg/leafref"
 )
 
-{{- if eq $fullName "root" }} 
-func Init{{$fullName | toUpperCamelCase}}(p *yentry.Entry, opts ...yentry.EntryOption) *yentry.Entry {
+{{- if eq $fullName "device" }} 
+func Init{{"root" | toUpperCamelCase}}(p *yentry.Entry, opts ...yentry.EntryOption) *yentry.Entry {
 {{- else }}
 func init{{$fullName | toUpperCamelCase}}(p *yentry.Entry, opts ...yentry.EntryOption) *yentry.Entry {
 {{- end }}
 	children := map[string]yentry.EntryInitFunc{
     {{- range $index, $child := $children}}
     {{- if eq $fullName "root" }}
-        "{{$child}}": init{{$child | toUpperCamelCase}},
+        "{{$child}}": init{{$child | removeDashes | toUpperCamelCase}},
     {{- else}}
-		"{{$child}}": init{{$fullName | toUpperCamelCase}}{{$child | toUpperCamelCase}},
+		"{{$child}}": init{{$fullName | toUpperCamelCase}}{{$child | removeDashes | toUpperCamelCase}},
     {{- end}}
     {{- end}}
 	}

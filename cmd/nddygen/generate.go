@@ -54,7 +54,7 @@ var generateCmd = &cobra.Command{
 		log.Debug("generate provider ...")
 
 		opts := []generator.Option{
-			generator.WithHeathStatus(healthState),
+			generator.WithHealthStatus(healthState),
 			generator.WithYangImportDirs(yangImportDirs),
 			generator.WithYangModuleDirs(yangModuleDirs),
 			generator.WithResourceMapInputFile(resourceMapInputFile),

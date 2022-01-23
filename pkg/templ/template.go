@@ -69,6 +69,9 @@ var templateHelperFunctions = template.FuncMap{
 			return 0
 		}
 	},
+	"removeDashes": func(s string) string {
+		return strings.ReplaceAll(s, "-", "")
+	},
 	"toUpperCamelCase": strcase.UpperCamelCase,
 	"toLowerCamelCase": strcase.LowerCamelCase,
 	"toKebabCase":      strcase.KebabCase,
