@@ -250,7 +250,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 
 							// append the container Ptr to the back of the list, to track the used container Pointers per level
 							// newLevel =0
-							r.SetRootContainerEntry(yparser.CreateContainerEntry(e, nil, nil, containerKey))
+							r.SetRootContainerEntry(yparser.CreateContainerEntry(e, nil, r.RootContainer, containerKey))
 							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
 							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], c)
 							r.ContainerList = append(r.ContainerList, r.RootContainer)

@@ -34,9 +34,9 @@ func (g *Generator) Render() error {
 		fmt.Printf("Render Resource path: %s\n", yparser.GnmiPath2XPath(r.GetActualGnmiFullPathWithKeys(), true))
 		for _, c := range r.ContainerList {
 			fmt.Printf("Render Container: HasState: %t, name: %s\n", c.HasState, c.GetFullName())
-			//for _, e := range c.GetEntries() {
-			//	fmt.Printf("  Render Container Entry: state: %t, name: %s\n", e.ReadOnly, e.Name)
-			//}
+			for _, e := range c.GetEntries() {
+				fmt.Printf("  Render Container Entry: state: %t, name: %s\n", e.ReadOnly, e.Name)
+			}
 		}
 		//r.AssignFileName(g.GetConfig().GetPrefix(), "_types.go")
 		/*
