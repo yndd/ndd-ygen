@@ -17,7 +17,6 @@ limitations under the License.
 package generator
 
 import (
-	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -45,7 +44,7 @@ func (g *Generator) IsResourceBoundary(respath string) bool {
 			}
 			// if found we can return, Since we found an exact match
 			if found {
-				fmt.Printf("resource boundary Path: %s\n", respath)
+				//fmt.Printf("resource boundary Path: %s\n", respath)
 				return true
 			}
 		}
@@ -129,15 +128,26 @@ func (g *Generator) FindBestMatch(inputPath *gnmi.Path) (*resource.Resource, boo
 				resMatch = r
 				minLength = len(r.GetAbsolutePath().GetElem())
 			}
+
 			/*
-				if strings.Contains(*g.parser.GnmiPathToXPath(&inputPath, false), "/nokia-conf/configure/router/ospf") {
-					fmt.Printf("FindBestMatchNew: Resource Path: %s, xpath: %s, length: %d, found: %t\n", *g.parser.GnmiPathToXPath(r.GetAbsoluteGnmiPath(), false), *g.parser.GnmiPathToXPath(&inputPath, false), minLength, found)
+				if strings.Contains(yparser.GnmiPath2XPath(inputPath, false), "/srl_nokia-network-instance/network-instance/aggregate-routes") {
+					if found {
+						fmt.Printf("FindBestMatchNew: inputPath: %s, resPath: %s, length: %d, found: %t\n", yparser.GnmiPath2XPath(inputPath, false), yparser.GnmiPath2XPath(resMatch.GetAbsolutePath(), false), minLength, found)
+						fmt.Printf("resMatch Path: %s\n", yparser.GnmiPath2XPath(resMatch.Path, false))
+					}
+
 				}
 			*/
+
 		}
 	}
 
 	if resMatch.Path != nil {
+		/*
+			if strings.Contains(yparser.GnmiPath2XPath(inputPath, false), "/srl_nokia-network-instance/network-instance/aggregate-routes") {
+				fmt.Printf("FindBestMatchNew: inputPath: %s, resPath: %s, length: %d, found: %t\n", yparser.GnmiPath2XPath(inputPath, false), yparser.GnmiPath2XPath(resMatch.GetAbsolutePath(), false), minLength, found)
+			}
+		*/
 		return resMatch, true
 	}
 	return resMatch, false
@@ -181,9 +191,16 @@ func (g *Generator) DoesResourceMatch(path *gnmi.Path) (*resource.Resource, bool
 
 			//fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
 			// check excludes
+
 			if g.ifExcluded(path, r.Excludes) {
 				return r, false
 			}
+			/*
+				if strings.Contains(yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), "/network-instance/aggregate-routes") {
+					fmt.Printf("FindBestMatchNew: path: %s, resPath: %s\n", yparser.GnmiPath2XPath(path, false), yparser.GnmiPath2XPath(r.GetAbsolutePath(), false))
+				}
+			*/
+
 			return r, true
 		}
 		return nil, false
@@ -204,6 +221,14 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 
 			if r, ok := g.DoesResourceMatch(newdynPath); ok {
 				//fmt.Printf("match path: %s, dyn path: %s \n", yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), yparser.GnmiPath2XPath(dynPath, false))
+				/*
+					if strings.Contains(yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), "/network-instance/aggregate-routes") {
+						fmt.Printf("match path: %s, dyn path: %s \n", yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), yparser.GnmiPath2XPath(dynPath, false))
+						fmt.Printf("ReadOnly: %t\n", e.ReadOnly())
+						fmt.Printf("RPC: %v\n", e.RPC)
+					}
+				*/
+
 				switch {
 				case e.RPC != nil:
 				case e.ReadOnly():
@@ -224,12 +249,22 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 					} else {
 						newLevel = strings.Count(resPath, "/") - strings.Count(yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), "/")
 					}
+					/*
+						if strings.Contains(yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), "/network-instance/aggregate-routes") {
+							fmt.Printf("newLevel: %d, resPath: %s\n", newLevel, yparser.GnmiPath2XPath(r.GetAbsolutePath(), false))
+							fmt.Printf("newLevel: %d, entryName: %s\n", newLevel, e.Name)
+						}
+					*/
 					var cPtr *container.Container
 					if newLevel > 0 {
 						r.ContainerLevel = newLevel
 
 						cPtr = r.ContainerLevelKeys[newLevel-1][len(r.ContainerLevelKeys[newLevel-1])-1]
-
+						/*
+							if strings.Contains(yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), "/network-instance/aggregate-routes") {
+								fmt.Printf("cPtr Name %s \n", cPtr.Name)
+							}
+						*/
 					}
 					//fmt.Printf("xpath: %s, resPath: %s, level: %d\n", *r.GetAbsoluteXPathWithoutKey(), resPath, r.ContainerLevel)
 
@@ -242,15 +277,16 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 						// for newLevl = 0 we dont create an entry in the container but we create a root container entry
 						if newLevel == 0 {
 							// create a new container and apply to the root of the resource
-							c := container.NewContainer(e.Name, e.ReadOnly(), g.IsResourceBoundary(resPath), r.RootContainer)
+							c := container.NewContainer(e.Name, e.ReadOnly(), g.IsResourceBoundary(resPath), nil)
 							if !g.GetConfig().GetResourceMapAll() {
 								r.RootContainer = c
+							} else {
+								r.RootContainer.AddContainerChild(c)
 							}
-							r.RootContainer.AddContainerChild(c)
 
 							// append the container Ptr to the back of the list, to track the used container Pointers per level
 							// newLevel =0
-							r.SetRootContainerEntry(yparser.CreateContainerEntry(e, nil, r.RootContainer, containerKey))
+							r.SetRootContainerEntry(yparser.CreateContainerEntry(e, nil, nil, containerKey))
 							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
 							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], c)
 							r.ContainerList = append(r.ContainerList, r.RootContainer)

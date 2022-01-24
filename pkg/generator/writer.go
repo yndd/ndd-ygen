@@ -26,18 +26,33 @@ import (
 	"github.com/yndd/ndd-yang/pkg/yparser"
 )
 
+func renderContainers(c *container.Container) {
+	fmt.Printf("getContainerList name: %s\n", c.GetFullNameWithRoot())
+	for _, e := range c.GetEntries() {
+		fmt.Printf("  entry Name: %s\n", e.Name)
+	}
+	for _, c := range c.GetChildren() {
+		renderContainers(c)
+		
+	}
+	
+}
+
 func (g *Generator) Render() error {
 	// Render the data
 	for _, r := range g.GetActualResources()[1:] {
 		fmt.Printf("Resource: %s\n", r.GetResourcePath())
 		fmt.Printf("Render Resource: %s\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()))
 		fmt.Printf("Render Resource path: %s\n", yparser.GnmiPath2XPath(r.GetActualGnmiFullPathWithKeys(), true))
+		renderContainers(r.RootContainer)
+		/*
 		for _, c := range r.ContainerList {
 			fmt.Printf("Render Container: HasState: %t, name: %s\n", c.HasState, c.GetFullName())
 			for _, e := range c.GetEntries() {
 				fmt.Printf("  Render Container Entry: state: %t, name: %s\n", e.ReadOnly, e.Name)
 			}
 		}
+		*/
 		//r.AssignFileName(g.GetConfig().GetPrefix(), "_types.go")
 		/*
 			if err := r.CreateFile(g.GetConfig().GetOutputDir(), "api", g.GetConfig().GetVersion()); err != nil {
