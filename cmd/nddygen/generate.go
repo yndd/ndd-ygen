@@ -59,13 +59,13 @@ var generateCmd = &cobra.Command{
 			generator.WithYangModuleDirs(yangModuleDirs),
 			generator.WithResourceMapInputFile(resourceMapInputFile),
 			generator.WithResourceMapAll(resourceMapAll),
-			generator.WithOutputDir(outputDir),
 			generator.WithPackageName(packageName),
 			generator.WithVersion(version),
 			generator.WithAPIGroup(apiGroup),
 			generator.WithPrefix(prefix),
 			generator.WithLogging(log),
 			generator.WithDebug(debug),
+			generator.WithOutputDir(outputDir),
 			generator.WithLocalRender(true),
 		}
 		g, err := generator.NewGenerator(opts...)
@@ -80,13 +80,13 @@ var generateCmd = &cobra.Command{
 			return err
 		}
 
-		if !resourceschema {
-			if err := g.Render(); err != nil {
+		if g.GetConfig().GetResourceMapAll() {
+			if err := g.RenderSchema(); err != nil {
 				log.Debug("Error", "error", err)
 				return err
 			}
 		} else {
-			if err := g.RenderSchema(); err != nil {
+			if err := g.Render(); err != nil {
 				log.Debug("Error", "error", err)
 				return err
 			}

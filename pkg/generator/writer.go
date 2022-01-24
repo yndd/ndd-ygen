@@ -39,12 +39,16 @@ func renderContainers(c *container.Container) {
 }
 
 func (g *Generator) Render() error {
+
 	// Render the data
 	for _, r := range g.GetActualResources()[1:] {
 		fmt.Printf("Resource: %s\n", r.GetResourcePath())
 		fmt.Printf("Render Resource: %s\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()))
 		fmt.Printf("Render Resource path: %s\n", yparser.GnmiPath2XPath(r.GetActualGnmiFullPathWithKeys(), true))
 		renderContainers(r.RootContainer)
+	}
+	//g.RenderSchemaMethods()
+		
 		/*
 		for _, c := range r.ContainerList {
 			fmt.Printf("Render Container: HasState: %t, name: %s\n", c.HasState, c.GetFullName())
@@ -98,9 +102,9 @@ func (g *Generator) Render() error {
 				return err
 			}
 		*/
-	}
+	
 
-	g.RenderSchemaMethods()
+	
 	return nil
 }
 
