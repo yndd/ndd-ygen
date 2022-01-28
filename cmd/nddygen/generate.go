@@ -80,7 +80,7 @@ var generateCmd = &cobra.Command{
 			return err
 		}
 
-		if g.GetConfig().GetResourceMapAll() {
+		if resourceschema {
 			if err := g.RenderSchema(); err != nil {
 				log.Debug("Error", "error", err)
 				return err

@@ -53,49 +53,7 @@ func (g *Generator) IsResourceBoundary(respath string) bool {
 }
 
 func (g *Generator) GetActualResources() []*resource.Resource {
-	/*
-		resources := make([]*resource.Resource, 0)
-		if g.GetConfig().GetResourceMapAll() {
-			// when generating the full resource e.g. for state use cases or the runtime yang schema
-			// we can just return the first resource entry
-			resources = append(resources, g.GetResources()[0])
-		} else {
-			// when generating the individual resources we skip the first resource since
-			// it is used as a full resource generator
-			resources = g.GetResources()
-		}
-	*/
 	return g.GetResources()
-}
-
-func (g *Generator) FindBestMatchAllResources(inputPath *gnmi.Path) bool {
-	found := false
-	for _, r := range g.GetActualResources()[1:] {
-		// max resource path length is 2, it should never be smaller than 2 either
-		rPath := yparser.DeepCopyGnmiPath(r.GetAbsolutePath())
-		pe := rPath.GetElem()
-		if len(pe) > 2 {
-			pe = pe[:2]
-		}
-		// if the input path is smaller than the resource we know there is no match
-		if len(pe) <= len(inputPath.GetElem()) {
-			// given we know the input PathElem are >= the resource Elements we can compare
-			// the elements using the index of the resource PathElem
-			for i, PathElem := range pe {
-				// if the name of the PathElem don't match this is not a resource that matches
-				if PathElem.GetName() != inputPath.GetElem()[i].GetName() {
-					found = false
-					break
-				} else {
-					found = true
-				}
-			}
-			if found {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 // FindBestMatchfinds the resource that has the best match, otherwise the resource is not found
@@ -180,9 +138,12 @@ func (g *Generator) DoesResourceMatch(path *gnmi.Path) (*resource.Resource, bool
 	//fmt.Printf("Path: %s\n", yparser.GnmiPath2XPath(path, true))
 
 	if g.GetConfig().GetResourceMapAll() {
-		if g.FindBestMatchAllResources(path) {
+		inputPath := yparser.GnmiPath2XPath(path, false)
+		if strings.HasPrefix(inputPath, g.schema) && len(strings.Split(inputPath, "/")) > 2 {
+			//fmt.Printf("path: %s\n", yparser.GnmiPath2XPath(path, false))
 			return g.rootResource, true
 		}
+
 		return nil, false
 
 	} else {

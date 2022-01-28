@@ -50,6 +50,7 @@ type Generator struct {
 	//parser *parser.Parser
 	config *Config // holds the configuration for the generator
 	//ResourceConfig  map[string]*ResourceDetails // holds the configuration of the resources we should generate
+	schema       string
 	resources    []*resource.Resource // holds the resources that are being generated
 	rootResource *resource.Resource
 	entries      []*yang.Entry // Yang entries parsed from the yang files
@@ -174,6 +175,8 @@ func NewGenerator(opts ...Option) (*Generator, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, errResourceInputFileUnMarshal)
 	}
+
+	g.schema = c.Schema
 
 	// initialize the resources from the YAML input file, we start at the root level using "/" path
 	g.rootResource = resource.NewResource(nil)

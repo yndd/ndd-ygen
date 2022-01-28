@@ -18,14 +18,15 @@ package generator
 
 // ResourceYamlInput struct
 type ResourceYamlInput struct {
-	Path map[string]PathDetails `yaml:"path"`
+	Schema string                 `yaml:"schema"`
+	Path   map[string]PathDetails `yaml:"path"`
 }
 
 // PathDetails struct
 type PathDetails struct {
 	//SubResources []string               `yaml:"sub-resources"`
-	Excludes     []string               `yaml:"excludes"`
-	Hierarchy    map[string]PathDetails `yaml:"hierarchy"`
+	Excludes  []string               `yaml:"excludes"`
+	Hierarchy map[string]PathDetails `yaml:"hierarchy"`
 }
 
 type Config struct {
