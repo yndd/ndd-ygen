@@ -50,15 +50,16 @@ type Generator struct {
 	//parser *parser.Parser
 	config *Config // holds the configuration for the generator
 	//ResourceConfig  map[string]*ResourceDetails // holds the configuration of the resources we should generate
-	schema       string
-	resources    []*resource.Resource // holds the resources that are being generated
-	rootResource *resource.Resource
-	entries      []*yang.Entry // Yang entries parsed from the yang files
-	template     *template.Template
-	log          logging.Logger
-	healthStatus bool
-	localRender  bool
-	debug        bool
+	schema        string
+	staticLeafRef map[string]string
+	resources     []*resource.Resource // holds the resources that are being generated
+	rootResource  *resource.Resource
+	entries       []*yang.Entry // Yang entries parsed from the yang files
+	template      *template.Template
+	log           logging.Logger
+	healthStatus  bool
+	localRender   bool
+	debug         bool
 }
 
 // Option can be used to manipulate Options.
@@ -177,7 +178,13 @@ func NewGenerator(opts ...Option) (*Generator, error) {
 	}
 
 	g.schema = c.Schema
+	g.staticLeafRef = c.StaticLeafref
 
+	
+	for localPath, remotePath := range g.staticLeafRef {
+		rPath := yparser.Xpath2GnmiPath(remotePath, 0)
+		fmt.Printf("localLeafRef: %s \n   RemoteLeafRef: %s \n   RemoteGnmiPath %v\n", localPath, remotePath, rPath)
+	}
 	// initialize the resources from the YAML input file, we start at the root level using "/" path
 	g.rootResource = resource.NewResource(nil)
 	g.resources = append(g.GetResources(), g.rootResource)

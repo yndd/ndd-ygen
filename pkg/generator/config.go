@@ -18,8 +18,9 @@ package generator
 
 // ResourceYamlInput struct
 type ResourceYamlInput struct {
-	Schema string                 `yaml:"schema"`
-	Path   map[string]PathDetails `yaml:"path"`
+	Schema        string                 `yaml:"schema"`
+	Path          map[string]PathDetails `yaml:"path"`
+	StaticLeafref map[string]string      `yaml:"static-leafref"`
 }
 
 // PathDetails struct

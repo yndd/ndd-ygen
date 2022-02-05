@@ -17,6 +17,7 @@ limitations under the License.
 package generator
 
 import (
+	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -68,6 +69,7 @@ func (g *Generator) FindBestMatch(inputPath *gnmi.Path) (*resource.Resource, boo
 	// option 2: for individual resources it is all except the first resource
 	for _, r := range g.GetActualResources()[1:] {
 		// if the input path is smaller than the resource we know there is no match
+		//fmt.Printf("len r: %d, len ip: %d\n", len(r.GetAbsolutePath().GetElem()), len(inputPath.GetElem()))
 		if len(r.GetAbsolutePath().GetElem()) <= len(inputPath.GetElem()) {
 			found = true
 			//fmt.Printf("FindBestMatch: resPath: %s, inputPath: %s\n", yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), yparser.GnmiPath2XPath(inputPath, false))
@@ -150,7 +152,7 @@ func (g *Generator) DoesResourceMatch(path *gnmi.Path) (*resource.Resource, bool
 		// this is the regular case
 		if r, ok := g.FindBestMatch(path); ok {
 
-			//fmt.Printf("match path: %s \n", *r.GetAbsoluteXPath())
+			//fmt.Printf("match path: %s \n", yparser.GnmiPath2XPath(r.GetAbsolutePath(), false))
 			// check excludes
 
 			if g.ifExcluded(path, r.Excludes) {
@@ -178,7 +180,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 		if !choice {
 			resPath += filepath.Join("/", e.Name)
 			newdynPath.Elem = append(newdynPath.Elem, (*gnmi.PathElem)(yparser.CreatePathElem(e)))
-			//fmt.Printf("resource path: %s, stateChild %t \n", yparser.GnmiPath2XPath(dynPath, false), stateChild)
+			//fmt.Printf("resource path: %s \n", yparser.GnmiPath2XPath(dynPath, false))
 
 			if r, ok := g.DoesResourceMatch(newdynPath); ok {
 				//fmt.Printf("match path: %s, dyn path: %s \n", yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), yparser.GnmiPath2XPath(dynPath, false))
@@ -216,6 +218,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							fmt.Printf("newLevel: %d, entryName: %s\n", newLevel, e.Name)
 						}
 					*/
+					//fmt.Printf("newLevel: %d, entryName: %s\n", newLevel, e.Name)
 					var cPtr *container.Container
 					if newLevel > 0 {
 						r.ContainerLevel = newLevel
@@ -311,17 +314,15 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 								// validate if the leafrefs is a local leafref or an external leafref
 								//fmt.Printf("LocalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
 								cPtr.AddLeafRef(localPath, remotePath)
-								/*
-									if local {
-										// local leafref
-										fmt.Printf("LocalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
-										cPtr.AddLocalLeafRef(localPath, remotePath)
-									} else {
-										// external leafref
-										fmt.Printf("ExternalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
-										cPtr.AddExternalLeafRef(localPath, remotePath)
-									}
-								*/
+							}
+							// add static leafref paths if they match
+							if remotePathString, ok := g.staticLeafRef[resPath]; ok {
+								localPath := &gnmi.Path{Elem: []*gnmi.PathElem{{Name: e.Name}}}
+								remotePath := yparser.Xpath2GnmiPath(remotePathString, 0)
+								fmt.Printf("localPath: %v \n   RemoteLeafRef: %v \n   RemoteLeafString %v\n", localPath, remotePath, remotePathString)
+								//os.Exit(1)
+
+								cPtr.AddLeafRef(localPath, remotePath)
 							}
 						}
 					}
