@@ -17,7 +17,6 @@ limitations under the License.
 package generator
 
 import (
-	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -198,9 +197,11 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 			newdynPath.Elem = append(newdynPath.Elem, (*gnmi.PathElem)(yparser.CreatePathElem(e)))
 			//fmt.Printf("resource path: %s \n", yparser.GnmiPath2XPath(dynPath, false))
 
-			if newNamespace != "" {
-				fmt.Printf("path: %s, namespace: %s\n", yparser.GnmiPath2XPath(newdynPath, false), e.Namespace().Name)
-			}
+			/*
+				if newNamespace != "" {
+					fmt.Printf("path: %s, namespace: %s\n", yparser.GnmiPath2XPath(newdynPath, false), e.Namespace().Name)
+				}
+			*/
 
 			if r, ok := g.DoesResourceMatch(newdynPath); ok {
 				//fmt.Printf("match path: %s, dyn path: %s \n", yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), yparser.GnmiPath2XPath(dynPath, false))
