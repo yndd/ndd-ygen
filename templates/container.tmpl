@@ -1,4 +1,7 @@
 {{- $name := .Name}}
+{{- $module := .Module}}
+{{- $namespace := .Namespace}}
+{{- $prefix := .Prefix}}
 {{- $fullName := .FullName}}
 {{- $keys := .Keys}}
 {{- $children := .Children}}
@@ -35,6 +38,9 @@ func init{{$fullName | toUpperCamelCase}}(p *yentry.Entry, opts ...yentry.EntryO
             "{{$key}}",
         {{- end}}
         },
+        Module: "{{$module}}",
+        Namespace: "{{$namespace}}",
+        Prefix: "{{$prefix}}",
         Parent: p,
         Children: make(map[string]*yentry.Entry),
         ResourceBoundary: {{$resourceBoundary}},

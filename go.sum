@@ -737,9 +737,7 @@ github.com/nats-io/nuid v1.0.1/go.mod h1:19wcPz3Ph3q0Jbyiqsd0kePYG7A95tJPxeL+1OS
 github.com/nats-io/stan.go v0.7.0/go.mod h1:Ci6mUIpGQTjl++MqK2XzkWI/0vF+Bl72uScx7ejSYmU=
 github.com/ncw/swift v1.0.47/go.mod h1:23YIA4yWVnGwv2dQlN4bB7egfYX6YLn0Yo/S6zZO/ZM=
 github.com/netw-device-driver/ndd-grpc v0.1.28/go.mod h1:HfnC81owTl7n476RrrbK2YzFjg7dtnvMjfVZ+ZGx09w=
-github.com/netw-device-driver/ndd-grpc v0.1.32 h1:Xn3PoCnqhZiGYnund88g+qdKzCtjL5YKrlS81yNIw0o=
 github.com/netw-device-driver/ndd-grpc v0.1.32/go.mod h1:JANvl+sv2h/e0IMq3tLX72HVLrpxYtBgFbd35wbyTOc=
-github.com/netw-device-driver/ndd-runtime v0.4.78 h1:t8vRO0+tB4GAAeJOH4fOUTfNvmn0lWSdZuKSpe+y+eI=
 github.com/netw-device-driver/ndd-runtime v0.4.78/go.mod h1:pe+ucJSwzefLFHRTCeHkIMrNf6F3OxSddBpfA1TT6Rs=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
@@ -999,8 +997,8 @@ github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:
 github.com/yndd/ndd-runtime v0.1.1 h1:sH/cA7EURGGiQXDtB7vKQeqUS3YGQQhiVZqUXGwaoaA=
 github.com/yndd/ndd-runtime v0.1.1/go.mod h1:H9878DK7V5xxs4bi1pMrWPZJ6/+X3MqpKaErDPkcLs4=
 github.com/yndd/ndd-yang v0.1.62/go.mod h1:GT/8efIchBH1sQ6J64AM1FZDXXIaWeirkYUpbmDPlHI=
-github.com/yndd/ndd-yang v0.1.426 h1:XsUd+g7a8PmQSyhX8LLPuOG3Uv+tl+SYcuzi6feTM9w=
-github.com/yndd/ndd-yang v0.1.426/go.mod h1:rIFXnOALLTloxMQtqGmTq32q6V9iTVHySE4ELup7hes=
+github.com/yndd/ndd-yang v0.1.527 h1:j2ksqTMxsW4VPLwOyGiY6k2wS7ls7eLPqRwIQsjLbeI=
+github.com/yndd/ndd-yang v0.1.527/go.mod h1:Hi5zfUg6Atk+2kERAV5XxoopE6rqtkLH9+bHhZkjEic=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

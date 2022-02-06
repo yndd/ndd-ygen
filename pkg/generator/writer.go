@@ -33,9 +33,9 @@ func renderContainers(c *container.Container) {
 	}
 	for _, c := range c.GetChildren() {
 		renderContainers(c)
-		
+
 	}
-	
+
 }
 
 func (g *Generator) Render() error {
@@ -48,63 +48,61 @@ func (g *Generator) Render() error {
 		renderContainers(r.RootContainer)
 	}
 	//g.RenderSchemaMethods()
-		
-		/*
+
+	/*
 		for _, c := range r.ContainerList {
 			fmt.Printf("Render Container: HasState: %t, name: %s\n", c.HasState, c.GetFullName())
 			for _, e := range c.GetEntries() {
 				fmt.Printf("  Render Container Entry: state: %t, name: %s\n", e.ReadOnly, e.Name)
 			}
 		}
-		*/
-		//r.AssignFileName(g.GetConfig().GetPrefix(), "_types.go")
-		/*
-			if err := r.CreateFile(g.GetConfig().GetOutputDir(), "api", g.GetConfig().GetVersion()); err != nil {
-				return err
-			}
-			if err := g.WriteResourceHeader(r); err != nil {
-				g.log.Debug("Write resource header error", "error", err)
-				return err
-			}
-
-			/*
-			for _, c := range r.ContainerList {
-				if err := g.WriteResourceContainers(r, c); err != nil {
-					g.log.Debug("Write resource container error", "error", err)
-					return err
-				}
-
-
-			}
-		*/
+	*/
+	//r.AssignFileName(g.GetConfig().GetPrefix(), "_types.go")
+	/*
+		if err := r.CreateFile(g.GetConfig().GetOutputDir(), "api", g.GetConfig().GetVersion()); err != nil {
+			return err
+		}
+		if err := g.WriteResourceHeader(r); err != nil {
+			g.log.Debug("Write resource header error", "error", err)
+			return err
+		}
 
 		/*
-			if err := g.WriteResourceEnd(r); err != nil {
-				g.log.Debug("Write resource end error", "error", err)
+		for _, c := range r.ContainerList {
+			if err := g.WriteResourceContainers(r, c); err != nil {
+				g.log.Debug("Write resource container error", "error", err)
 				return err
 			}
-		*/
 
-		// EXPERIMENTAL
-		/*
-			if err := g.WriteResourceLocalLeafRef(r); err != nil {
-				g.log.Debug("Write resource local leafRef error", "error", err)
-				return err
-			}
-			if err := g.WriteResourceExternalLeafRef(r); err != nil {
-				g.log.Debug("Write resource external leafRef error", "error", err)
-				return err
-			}
-		*/
 
-		/*
-			if err := r.CloseFile(); err != nil {
-				return err
-			}
-		*/
-	
+		}
+	*/
 
-	
+	/*
+		if err := g.WriteResourceEnd(r); err != nil {
+			g.log.Debug("Write resource end error", "error", err)
+			return err
+		}
+	*/
+
+	// EXPERIMENTAL
+	/*
+		if err := g.WriteResourceLocalLeafRef(r); err != nil {
+			g.log.Debug("Write resource local leafRef error", "error", err)
+			return err
+		}
+		if err := g.WriteResourceExternalLeafRef(r); err != nil {
+			g.log.Debug("Write resource external leafRef error", "error", err)
+			return err
+		}
+	*/
+
+	/*
+		if err := r.CloseFile(); err != nil {
+			return err
+		}
+	*/
+
 	return nil
 }
 
@@ -264,6 +262,9 @@ func (g *Generator) RenderSchemaMethods() error {
 func (g *Generator) WriteContainer(f *os.File, c *container.Container) error {
 	s := struct {
 		Name             string
+		Module           string
+		Namespace        string
+		Prefix           string
 		FullName         string
 		Keys             []string
 		Children         []string
@@ -271,6 +272,9 @@ func (g *Generator) WriteContainer(f *os.File, c *container.Container) error {
 		LeafRefs         []*leafref.LeafRef
 	}{
 		Name:             c.GetName(),
+		Module:           c.GetModuleName(),
+		Namespace:        c.GetNamespace(),
+		Prefix:           c.GetPrefixName(),
 		FullName:         c.GetFullNameWithRoot(),
 		Keys:             c.GetKeyNames(),
 		Children:         c.GetChildrenNames(),

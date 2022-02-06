@@ -29,6 +29,15 @@ import (
 	"github.com/yndd/ndd-yang/pkg/yparser"
 )
 
+func (g *Generator) GetModuleName(namespace string) string {
+	for moduleName, m := range g.getModules() {
+		if m.Namespace.Name == namespace {
+			return moduleName
+		}
+	}
+	return ""
+}
+
 func (g *Generator) IsResourceBoundary(respath string) bool {
 	inputPath := yparser.Xpath2GnmiPath(respath, 0)
 	for _, r := range g.GetResources()[1:] {
@@ -171,16 +180,27 @@ func (g *Generator) DoesResourceMatch(path *gnmi.Path) (*resource.Resource, bool
 
 }
 
-func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yang.Entry, choice bool, containerKey string) error {
+func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yang.Entry, choice bool, containerKey, namespace string) error {
 	// only add the pathElem this yang entry is not a choice entry
 	// 1. e.IsChoice() represents that the current entry is a choice -> we can skip the processing
 	// 2. choice means the previous yang entry was a choice so we need to skip one more round in processing
 	newdynPath := yparser.DeepCopyGnmiPath(dynPath)
+	newNamespace := ""
+	newModuleName := ""
+	if namespace != e.Namespace().Name {
+		newNamespace = e.Namespace().Name
+		newModuleName = g.GetModuleName(newNamespace)
+	}
+
 	if !e.IsChoice() {
 		if !choice {
 			resPath += filepath.Join("/", e.Name)
 			newdynPath.Elem = append(newdynPath.Elem, (*gnmi.PathElem)(yparser.CreatePathElem(e)))
 			//fmt.Printf("resource path: %s \n", yparser.GnmiPath2XPath(dynPath, false))
+
+			if newNamespace != "" {
+				fmt.Printf("path: %s, namespace: %s\n", yparser.GnmiPath2XPath(newdynPath, false), e.Namespace().Name)
+			}
 
 			if r, ok := g.DoesResourceMatch(newdynPath); ok {
 				//fmt.Printf("match path: %s, dyn path: %s \n", yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), yparser.GnmiPath2XPath(dynPath, false))
@@ -212,18 +232,21 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 					} else {
 						newLevel = strings.Count(resPath, "/") - strings.Count(yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), "/")
 					}
+
 					/*
-						if strings.Contains(yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), "/network-instance/aggregate-routes") {
-							fmt.Printf("newLevel: %d, resPath: %s\n", newLevel, yparser.GnmiPath2XPath(r.GetAbsolutePath(), false))
-							fmt.Printf("newLevel: %d, entryName: %s\n", newLevel, e.Name)
+						if strings.Contains(yparser.GnmiPath2XPath(dynPath, false), "/srl_nokia-interfaces/interface") {
+							fmt.Printf("newLevel: %d, resPath: %s dynPath: %s\n", newLevel, yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), yparser.GnmiPath2XPath(dynPath, false))
+							fmt.Printf("newLevel: %d, entryName: %s prefix: %v, namespace: %v\n", newLevel, e.Name, e.Prefix.Name, e.Namespace().Name)
 						}
 					*/
+
 					//fmt.Printf("newLevel: %d, entryName: %s\n", newLevel, e.Name)
 					var cPtr *container.Container
 					if newLevel > 0 {
 						r.ContainerLevel = newLevel
 
 						cPtr = r.ContainerLevelKeys[newLevel-1][len(r.ContainerLevelKeys[newLevel-1])-1]
+
 						/*
 							if strings.Contains(yparser.GnmiPath2XPath(r.GetAbsolutePath(), false), "/network-instance/aggregate-routes") {
 								fmt.Printf("cPtr Name %s \n", cPtr.Name)
@@ -233,6 +256,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 					//fmt.Printf("xpath: %s, resPath: %s, level: %d\n", *r.GetAbsoluteXPathWithoutKey(), resPath, r.ContainerLevel)
 
 					if e.Kind.String() != "Leaf" {
+
 						//fmt.Printf("State Info container/list: state info: %t entry name: %s \n", e.ReadOnly(), e.Name)
 						// List processing with or without a key
 						// fmt.Printf("List Name: %s, ResPath: %s \n", e.Name, resPath)
@@ -241,7 +265,8 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 						// for newLevl = 0 we dont create an entry in the container but we create a root container entry
 						if newLevel == 0 {
 							// create a new container and apply to the root of the resource
-							c := container.NewContainer(e.Name, e.ReadOnly(), g.IsResourceBoundary(resPath), r.RootContainer)
+							newModuleName := g.GetModuleName(e.Namespace().Name)
+							c := container.NewContainer(e, e.Namespace().Name, newModuleName, e.ReadOnly(), g.IsResourceBoundary(resPath), r.RootContainer)
 							if g.GetConfig().GetResourceMapAll() {
 								r.RootContainer.AddContainerChild(c)
 							} else {
@@ -257,7 +282,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 
 						} else {
 							// create a new container for the next iteration
-							c := container.NewContainer(e.Name, e.ReadOnly(), g.IsResourceBoundary(resPath), cPtr)
+							c := container.NewContainer(e, newNamespace, newModuleName, e.ReadOnly(), g.IsResourceBoundary(resPath), cPtr)
 							cPtr.AddContainerChild(c)
 							if newLevel == 1 {
 								r.RootContainerEntry.Next = c
@@ -285,8 +310,9 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							dummyYangEntry := &yang.Entry{
 								Name:     e.Name,
 								ListAttr: e.ListAttr,
+								Prefix:   e.Prefix,
 							}
-							c := container.NewContainer(dummyYangEntry.Name, e.ReadOnly(), g.IsResourceBoundary(resPath), cPtr)
+							c := container.NewContainer(dummyYangEntry, newNamespace, newModuleName, e.ReadOnly(), g.IsResourceBoundary(resPath), cPtr)
 							cPtr.AddContainerChild(c)
 							r.ContainerList = append(r.ContainerList, c)
 							cPtr.Entries = append(cPtr.Entries, yparser.CreateContainerEntry(dummyYangEntry, c, cPtr, containerKey))
@@ -319,7 +345,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							if remotePathString, ok := g.staticLeafRef[resPath]; ok {
 								localPath := &gnmi.Path{Elem: []*gnmi.PathElem{{Name: e.Name}}}
 								remotePath := yparser.Xpath2GnmiPath(remotePathString, 0)
-								fmt.Printf("localPath: %v \n   RemoteLeafRef: %v \n   RemoteLeafString %v\n", localPath, remotePath, remotePathString)
+								//fmt.Printf("localPath: %v \n   RemoteLeafRef: %v \n   RemoteLeafString %v\n", localPath, remotePath, remotePathString)
 								//os.Exit(1)
 
 								cPtr.AddLeafRef(localPath, remotePath)
@@ -342,7 +368,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 		// the key is resolved with the name in the next level resolution and this is how we can identify
 		// if a entry (which is the key name) is mandatory or not
 		var err error
-		if err = g.ResourceGenerator(resPath, newdynPath, e.Dir[k], e.IsChoice(), e.Key); err != nil {
+		if err = g.ResourceGenerator(resPath, newdynPath, e.Dir[k], e.IsChoice(), e.Key, e.Namespace().Name); err != nil {
 			return nil
 		}
 		//fmt.Printf("recursive: path: %s, entryName: %s\n", newdynPath, e.Dir[k].Name)

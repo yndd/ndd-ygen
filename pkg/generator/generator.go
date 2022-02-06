@@ -54,7 +54,8 @@ type Generator struct {
 	staticLeafRef map[string]string
 	resources     []*resource.Resource // holds the resources that are being generated
 	rootResource  *resource.Resource
-	entries       []*yang.Entry // Yang entries parsed from the yang files
+	entries       []*yang.Entry           // Yang entries parsed from the yang files
+	modules       map[string]*yang.Module // Yang modules parsed from the yang files
 	template      *template.Template
 	log           logging.Logger
 	healthStatus  bool
@@ -180,7 +181,6 @@ func NewGenerator(opts ...Option) (*Generator, error) {
 	g.schema = c.Schema
 	g.staticLeafRef = c.StaticLeafref
 
-	
 	for localPath, remotePath := range g.staticLeafRef {
 		rPath := yparser.Xpath2GnmiPath(remotePath, 0)
 		fmt.Printf("localLeafRef: %s \n   RemoteLeafRef: %s \n   RemoteGnmiPath %v\n", localPath, remotePath, rPath)
@@ -198,7 +198,7 @@ func NewGenerator(opts ...Option) (*Generator, error) {
 	//g.ShowResources()
 
 	// initialize goyang, with the information supplied from the flags
-	g.entries, err = g.initializeGoYang()
+	g.entries, g.modules, err = g.initializeGoYang()
 	if err != nil {
 		return nil, err
 	}
@@ -230,6 +230,10 @@ func (g *Generator) getEntries() []*yang.Entry {
 	return g.entries
 }
 
+func (g *Generator) getModules() map[string]*yang.Module {
+	return g.modules
+}
+
 func (g *Generator) getTemplate() *template.Template {
 	return g.template
 }
@@ -245,13 +249,13 @@ func (g *Generator) initTemplates() error {
 
 // GOYANG processing
 // Read and validate the import directory with yang module
-func (g *Generator) initializeGoYang() ([]*yang.Entry, error) {
+func (g *Generator) initializeGoYang() ([]*yang.Entry, map[string]*yang.Module, error) {
 	// GOYANG processing
 	// Read and validate the import directory with yang module
 	for _, path := range g.GetConfig().GetYangImportDirs() {
 		expanded, err := yang.PathsWithModules(path)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 			//continue
 		}
 		//g.log.Debug("Expanded info", "Expanded", expanded)
@@ -266,26 +270,26 @@ func (g *Generator) initializeGoYang() ([]*yang.Entry, error) {
 	for _, d := range g.GetConfig().GetYangModuleDirs() {
 		fi, err := os.Stat(d)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		switch mode := fi.Mode(); {
 		case mode.IsDir():
 			// Handle directory files input
 			files, err := ioutil.ReadDir(d)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			for _, f := range files {
 				//g.log.Debug("Yang File Info", "FileName", d+"/"+f.Name())
 				if err := ms.Read(d + "/" + f.Name()); err != nil {
-					return nil, err
+					return nil, nil, err
 				}
 			}
 		case mode.IsRegular():
 			// Handle file input
 			//g.log.Debug("Yang File Info", "FileName", fi.Name())
 			if err := ms.Read(filepath.Dir(d) + fi.Name()); err != nil {
-				return nil, err
+				return nil, nil, err
 				//continue
 			}
 		}
@@ -313,7 +317,7 @@ func (g *Generator) initializeGoYang() ([]*yang.Entry, error) {
 	for x, n := range names {
 		entries[x] = yang.ToEntry(mods[n])
 	}
-	return entries, nil
+	return entries, mods, nil
 }
 
 func (g *Generator) Run() error {
@@ -325,7 +329,7 @@ func (g *Generator) Run() error {
 		path := &gnmi.Path{
 			Elem: make([]*gnmi.PathElem, 0),
 		}
-		if err := g.ResourceGenerator("", path, e, false, ""); err != nil {
+		if err := g.ResourceGenerator("", path, e, false, "", ""); err != nil {
 			return err
 		}
 	}
@@ -432,5 +436,11 @@ func (g *Generator) ShowResources() {
 func (g *Generator) ShowActualPathPerResource() {
 	for _, r := range g.GetActualResources() {
 		fmt.Printf("Resource Path: %s\n", yparser.GnmiPath2XPath(r.GetAbsolutePath(), false))
+	}
+}
+
+func (g * Generator) ShowModules() {
+	for moduleName, m := range g.getModules() {
+		fmt.Printf("moduleName: %s, \n  fullname: %s\n  prefix: %s\n  namespace: %s\n", moduleName, m.FullName(), m.GetPrefix(), m.Namespace.Name)
 	}
 }
