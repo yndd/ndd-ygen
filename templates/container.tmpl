@@ -7,6 +7,7 @@
 {{- $children := .Children}}
 {{- $resourceBoundary := .ResourceBoundary}}
 {{- $leafRefs := .LeafRefs}}
+{{- $defaults := .Defaults}}
 package yangschema
 
 import (    
@@ -69,6 +70,11 @@ func init{{$fullName | toUpperCamelCase}}(p *yentry.Entry, opts ...yentry.EntryO
                 },
             },
             {{- end}}
+        },
+        Defaults: map[string]string{
+            {{- range $name, $default := $defaults}}
+            {"{{$name}}": "{{$default}}"},
+            {{- end }}
         },
     }
 

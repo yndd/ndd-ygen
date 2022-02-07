@@ -17,6 +17,7 @@ limitations under the License.
 package generator
 
 import (
+	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -316,14 +317,29 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							c := container.NewContainer(dummyYangEntry, newNamespace, newModuleName, e.ReadOnly(), g.IsResourceBoundary(resPath), cPtr)
 							cPtr.AddContainerChild(c)
 							r.ContainerList = append(r.ContainerList, c)
-							cPtr.Entries = append(cPtr.Entries, yparser.CreateContainerEntry(dummyYangEntry, c, cPtr, containerKey))
+							centry := yparser.CreateContainerEntry(dummyYangEntry, c, cPtr, containerKey)
+							cPtr.Entries = append(cPtr.Entries, centry)
+							if centry.GetDefault() != "" {
+								fmt.Printf("container: %s, entry name: %s, default: %s\n", cPtr.GetFullName(), centry.GetName(), centry.GetDefault())
+								cPtr.SetDefault(dummyYangEntry.Name, centry.GetDefault())
+							}
 
 							e.ListAttr = nil
-							c.Entries = append(c.Entries, yparser.CreateContainerEntry(e, nil, nil, containerKey))
+							centry = yparser.CreateContainerEntry(e, nil, nil, containerKey)
+							c.Entries = append(c.Entries, centry)
+							if centry.GetDefault() != "" {
+								fmt.Printf("container: %s, entry name: %s, default: %s\n", c.GetFullName(), centry.GetName(), centry.GetDefault())
+								cPtr.SetDefault(e.Name, centry.GetDefault())
+							}
 
 						} else {
 							// add entry to the container, containerKey allows to see if a
-							cPtr.Entries = append(cPtr.Entries, yparser.CreateContainerEntry(e, nil, nil, containerKey))
+							centry := yparser.CreateContainerEntry(e, nil, nil, containerKey)
+							cPtr.Entries = append(cPtr.Entries, centry)
+							if centry.GetDefault() != "" {
+								fmt.Printf("container: %s, entry name: %s, default: %s\n", cPtr.GetFullName(), centry.GetName(), centry.GetDefault())
+								cPtr.SetDefault(e.Name, centry.GetDefault())
+							}
 							// leafRef processing
 							localPath, remotePath, local := yparser.ProcessLeafRef(e, resPath, r.GetAbsoluteGnmiPathFromSource())
 							if localPath != nil {

@@ -219,7 +219,7 @@ func (g *Generator) RenderSchema() error {
 }
 
 func (g *Generator) renderSchema(c *container.Container) error {
-	fmt.Printf("Container FullName %s\n", c.GetFullNameWithRoot())
+	//fmt.Printf("Container FullName %s\n", c.GetFullNameWithRoot())
 
 	f, err := os.Create(filepath.Join(g.GetConfig().GetOutputDir(), "yangschema", c.GetFullNameWithRoot()+".go"))
 	if err != nil {
@@ -270,6 +270,7 @@ func (g *Generator) WriteContainer(f *os.File, c *container.Container) error {
 		Children         []string
 		ResourceBoundary bool
 		LeafRefs         []*leafref.LeafRef
+		Defaults         map[string]string
 	}{
 		Name:             c.GetName(),
 		Module:           c.GetModuleName(),
@@ -280,6 +281,7 @@ func (g *Generator) WriteContainer(f *os.File, c *container.Container) error {
 		Children:         c.GetChildrenNames(),
 		ResourceBoundary: c.GetResourceBoundary(),
 		LeafRefs:         c.GetLeafRefs(),
+		Defaults:         c.GetDefaults(),
 	}
 	//g.log.Debug("External leafrefs", "external leafref", r.LocalLeafRefs)
 	if err := g.getTemplate().ExecuteTemplate(f, "container.tmpl", s); err != nil {
