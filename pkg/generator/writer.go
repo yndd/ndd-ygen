@@ -27,27 +27,30 @@ import (
 )
 
 func renderContainers(c *container.Container) {
-	fmt.Printf("container info: %v\n", c)
-	fmt.Printf("getContainerList name: %s\n", c.GetFullNameWithRoot())
-	for _, e := range c.GetEntries() {
-		fmt.Printf("  entry Name: %s\n", e.Name)
+	if c != nil {
+		fmt.Printf("container info: %v\n", c)
+		fmt.Printf("getContainerList name: %s\n", c.GetFullNameWithRoot())
+		for _, e := range c.GetEntries() {
+			fmt.Printf("  entry Name: %s\n", e.Name)
+		}
+
+		for _, c := range c.GetChildren() {
+			renderContainers(c)
+		}
 	}
-	
-	for _, c := range c.GetChildren() {
-		renderContainers(c)
-	}
+
 }
 
 func (g *Generator) Render() error {
 	if g.GetConfig().GetResourceMapAll() {
 		// Render the data
 		//for _, r := range g.GetActualResources()[:0] {
-			r := g.GetActualResources()[0]
-			fmt.Printf("Resource: %s\n", r.GetResourcePath())
-			fmt.Printf("Render Resource: %s\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()))
-			fmt.Printf("Render Resource path: %s\n", yparser.GnmiPath2XPath(r.GetActualGnmiFullPathWithKeys(), true))
-			//fmt.Printf("Resource: %v\n", r)
-			renderContainers(r.RootContainer)
+		r := g.GetActualResources()[0]
+		fmt.Printf("Resource: %s\n", r.GetResourcePath())
+		fmt.Printf("Render Resource: %s\n", r.GetResourceNameWithPrefix(g.GetConfig().GetPrefix()))
+		fmt.Printf("Render Resource path: %s\n", yparser.GnmiPath2XPath(r.GetActualGnmiFullPathWithKeys(), true))
+		//fmt.Printf("Resource: %v\n", r)
+		renderContainers(r.RootContainer)
 		//}
 	} else {
 		// Render the data
