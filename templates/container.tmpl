@@ -73,7 +73,7 @@ func init{{$fullName | toUpperCamelCase}}(p *yentry.Entry, opts ...yentry.EntryO
         },
         Defaults: map[string]string{
             {{- range $name, $default := $defaults}}
-            {"{{$name}}": "{{$default}}"},
+            "{{$name}}": "{{$default}}",
             {{- end }}
         },
     }

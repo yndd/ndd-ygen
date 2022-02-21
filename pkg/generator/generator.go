@@ -188,11 +188,9 @@ func NewGenerator(opts ...Option) (*Generator, error) {
 	// initialize the resources from the YAML input file, we start at the root level using "/" path
 	g.rootResource = resource.NewResource(nil)
 	g.resources = append(g.GetResources(), g.rootResource)
-	//if !g.GetConfig().GetResourceMapAll() {
 	if err := g.InitializeResources(c.Path, "/", g.rootResource); err != nil {
 		return nil, errors.Wrap(err, errCannotInitializeResources)
 	}
-	//}
 
 	// show the result of the processed resources
 	//g.ShowResources()

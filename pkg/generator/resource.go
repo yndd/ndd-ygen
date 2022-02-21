@@ -17,7 +17,6 @@ limitations under the License.
 package generator
 
 import (
-	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -278,6 +277,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							// append the container Ptr to the back of the list, to track the used container Pointers per level
 							// newLevel =0
 							r.SetRootContainerEntry(yparser.CreateContainerEntry(e, nil, nil, containerKey))
+							r.RootContainer.Entries = append(r.RootContainer.Entries, yparser.CreateContainerEntry(e, nil, nil, containerKey))
 							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
 							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], c)
 							r.ContainerList = append(r.ContainerList, r.RootContainer)
@@ -320,7 +320,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							centry := yparser.CreateContainerEntry(dummyYangEntry, c, cPtr, containerKey)
 							cPtr.Entries = append(cPtr.Entries, centry)
 							if centry.GetDefault() != "" {
-								fmt.Printf("container: %s, entry name: %s, default: %s\n", cPtr.GetFullName(), centry.GetName(), centry.GetDefault())
+								//fmt.Printf("container: %s, entry name: %s, default: %s\n", cPtr.GetFullName(), centry.GetName(), centry.GetDefault())
 								cPtr.SetDefault(dummyYangEntry.Name, centry.GetDefault())
 							}
 
@@ -328,7 +328,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							centry = yparser.CreateContainerEntry(e, nil, nil, containerKey)
 							c.Entries = append(c.Entries, centry)
 							if centry.GetDefault() != "" {
-								fmt.Printf("container: %s, entry name: %s, default: %s\n", c.GetFullName(), centry.GetName(), centry.GetDefault())
+								//fmt.Printf("container: %s, entry name: %s, default: %s\n", c.GetFullName(), centry.GetName(), centry.GetDefault())
 								cPtr.SetDefault(e.Name, centry.GetDefault())
 							}
 
@@ -337,7 +337,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							centry := yparser.CreateContainerEntry(e, nil, nil, containerKey)
 							cPtr.Entries = append(cPtr.Entries, centry)
 							if centry.GetDefault() != "" {
-								fmt.Printf("container: %s, entry name: %s, default: %s\n", cPtr.GetFullName(), centry.GetName(), centry.GetDefault())
+								//fmt.Printf("container: %s, entry name: %s, default: %s\n", cPtr.GetFullName(), centry.GetName(), centry.GetDefault())
 								cPtr.SetDefault(e.Name, centry.GetDefault())
 							}
 							// leafRef processing
