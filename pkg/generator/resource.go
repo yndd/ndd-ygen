@@ -278,7 +278,7 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							// newLevel =0
 							r.SetRootContainerEntry(yparser.CreateContainerEntry(e, nil, nil, containerKey))
 							// added for full schema
-							r.RootContainer.Entries = append(r.RootContainer.Entries, yparser.CreateContainerEntry(e, nil, c, containerKey))
+							r.RootContainer.Entries = append(r.RootContainer.Entries, yparser.CreateContainerEntry(e, c, c, containerKey))
 							r.ContainerLevelKeys[newLevel] = make([]*container.Container, 0)
 							r.ContainerLevelKeys[newLevel] = append(r.ContainerLevelKeys[newLevel], c)
 							r.ContainerList = append(r.ContainerList, r.RootContainer)
