@@ -250,19 +250,27 @@ func (g *Generator) initTemplates() error {
 func (g *Generator) initializeGoYang() ([]*yang.Entry, map[string]*yang.Module, error) {
 	// GOYANG processing
 	// Read and validate the import directory with yang module
-	for _, path := range g.GetConfig().GetYangImportDirs() {
-		expanded, err := yang.PathsWithModules(path)
-		if err != nil {
-			return nil, nil, err
-			//continue
+	/*
+		for _, path := range g.GetConfig().GetYangImportDirs() {
+			expanded, err := yang.PathsWithModules(path)
+			if err != nil {
+				return nil, nil, err
+				//continue
+			}
+			//g.log.Debug("Expanded info", "Expanded", expanded)
+			yang.AddPath(expanded...)
 		}
-		//g.log.Debug("Expanded info", "Expanded", expanded)
-		yang.AddPath(expanded...)
-	}
+	*/
 	//g.log.Debug("Yang Path Info", "Path", yang.Path)
 
 	// Initialize yang modules
-	ms := yang.NewModules()
+	moduleSet := yang.NewModules()
+	// Append the includePaths to the Goyang path variable, this ensures
+	// that where a YANG module uses an 'include' statement to reference
+	// another module, then Goyang can find this module to process.
+	for _, path := range g.GetConfig().GetYangImportDirs() {
+		moduleSet.AddPath(path)
+	}
 
 	// Read the yang directory
 	for _, d := range g.GetConfig().GetYangModuleDirs() {
@@ -279,14 +287,14 @@ func (g *Generator) initializeGoYang() ([]*yang.Entry, map[string]*yang.Module, 
 			}
 			for _, f := range files {
 				//g.log.Debug("Yang File Info", "FileName", d+"/"+f.Name())
-				if err := ms.Read(d + "/" + f.Name()); err != nil {
+				if err := moduleSet.Read(d + "/" + f.Name()); err != nil {
 					return nil, nil, err
 				}
 			}
 		case mode.IsRegular():
 			// Handle file input
 			//g.log.Debug("Yang File Info", "FileName", fi.Name())
-			if err := ms.Read(filepath.Dir(d) + fi.Name()); err != nil {
+			if err := moduleSet.Read(filepath.Dir(d) + fi.Name()); err != nil {
 				return nil, nil, err
 				//continue
 			}
@@ -294,7 +302,7 @@ func (g *Generator) initializeGoYang() ([]*yang.Entry, map[string]*yang.Module, 
 	}
 
 	// Process the yang modules
-	errs := ms.Process()
+	errs := moduleSet.Process()
 	if len(errs) > 0 {
 		for err := range errs {
 			g.log.Debug("Error", "error", err)
@@ -304,7 +312,7 @@ func (g *Generator) initializeGoYang() ([]*yang.Entry, map[string]*yang.Module, 
 	// Those are the only modules we want to process.
 	mods := map[string]*yang.Module{}
 	var names []string
-	for _, m := range ms.Modules {
+	for _, m := range moduleSet.Modules {
 		if mods[m.Name] == nil {
 			mods[m.Name] = m
 			names = append(names, m.Name)
@@ -437,7 +445,7 @@ func (g *Generator) ShowActualPathPerResource() {
 	}
 }
 
-func (g * Generator) ShowModules() {
+func (g *Generator) ShowModules() {
 	for moduleName, m := range g.getModules() {
 		fmt.Printf("moduleName: %s, \n  fullname: %s\n  prefix: %s\n  namespace: %s\n", moduleName, m.FullName(), m.GetPrefix(), m.Namespace.Name)
 	}

@@ -73,9 +73,9 @@ var generateCmd = &cobra.Command{
 			return errors.Wrap(err, errCreateGenerator)
 		}
 		//g.ShowConfiguration()
-		g.ShowResources()
+		//g.ShowResources()
 
-		g.ShowModules()
+		//g.ShowModules()
 
 		if err := g.Run(); err != nil {
 			log.Debug("Error", "error", err)
