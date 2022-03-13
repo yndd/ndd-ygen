@@ -362,6 +362,8 @@ func (g *Generator) walkContainer(c *container.Container) {
 				leafRefType := getTypeFromPath(g.GetActualResources()[0].RootContainer, e.RemotePath.GetElem())
 				if leafRefType != "not found" {
 					e.Type = leafRefType
+					//fmt.Printf("container: %s, entry: %s, remotePath: %s\n", c.Name, e.Name, yparser.GnmiPath2XPath(e.RemotePath, true))
+					//fmt.Printf("leafref type: %s\n", getTypeFromPath(g.GetActualResources()[0].RootContainer, e.RemotePath.GetElem()))
 				} else {
 					fmt.Printf("container: %s, entry: %s, remotePath: %s\n", c.Name, e.Name, yparser.GnmiPath2XPath(e.RemotePath, true))
 					fmt.Printf("leafref type: %s\n", getTypeFromPath(g.GetActualResources()[0].RootContainer, e.RemotePath.GetElem()))
@@ -376,14 +378,8 @@ func (g *Generator) walkContainer(c *container.Container) {
 
 func getTypeFromPath(c *container.Container, elem []*gnmi.PathElem) string {
 	if len(elem) == 1 {
-		list := false
-		var entry *container.Entry
 		//fmt.Printf("getTypeFromPath: %v\n", elem)
 		for _, e := range c.GetEntries() {
-			if e.Key != "" {
-				list = true
-				entry = e
-			}
 			if e.Name == elem[0].GetName() {
 				if len(elem[0].Key) != 0 {
 					for _, e := range e.Next.GetEntries() {
@@ -396,9 +392,6 @@ func getTypeFromPath(c *container.Container, elem []*gnmi.PathElem) string {
 				}
 				return e.Type
 			}
-		}
-		if list {
-			return entry.Type
 		}
 	} else {
 		for _, c := range c.GetChildren() {

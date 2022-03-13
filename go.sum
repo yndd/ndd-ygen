@@ -997,8 +997,8 @@ github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:
 github.com/yndd/ndd-runtime v0.1.1 h1:sH/cA7EURGGiQXDtB7vKQeqUS3YGQQhiVZqUXGwaoaA=
 github.com/yndd/ndd-runtime v0.1.1/go.mod h1:H9878DK7V5xxs4bi1pMrWPZJ6/+X3MqpKaErDPkcLs4=
 github.com/yndd/ndd-yang v0.1.62/go.mod h1:GT/8efIchBH1sQ6J64AM1FZDXXIaWeirkYUpbmDPlHI=
-github.com/yndd/ndd-yang v0.2.5 h1:HCFUfrnXJ90o3T4LdPc78xMQ5kQ+iTjkw1hUyatlI08=
-github.com/yndd/ndd-yang v0.2.5/go.mod h1:iZ3zlnPGy3kla8hhi9wW36NpUpXp4SlqTdz2R02Gkk0=
+github.com/yndd/ndd-yang v0.2.6 h1:w/bF0L6vBrfpxSq3nu6N5grdNIRxizJIo02PWPGVO6c=
+github.com/yndd/ndd-yang v0.2.6/go.mod h1:iZ3zlnPGy3kla8hhi9wW36NpUpXp4SlqTdz2R02Gkk0=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
