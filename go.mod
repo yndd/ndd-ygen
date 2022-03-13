@@ -10,7 +10,7 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/stoewer/go-strcase v1.2.0
 	github.com/yndd/ndd-runtime v0.1.1
-	github.com/yndd/ndd-yang v0.2.0
+	github.com/yndd/ndd-yang v0.2.5
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/controller-runtime v0.9.5
 )

@@ -17,6 +17,7 @@ limitations under the License.
 package generator
 
 import (
+	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -358,8 +359,9 @@ func (g *Generator) ResourceGenerator(resPath string, dynPath *gnmi.Path, e *yan
 							localPath, remotePath, _ = yparser.ProcessLeafRef(e, resPath, r.GetAbsoluteGnmiPathFromSource())
 							if localPath != nil {
 								// validate if the leafrefs is a local leafref or an external leafref
-								//fmt.Printf("LocalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
+								fmt.Printf("LocalLeafRef localPath: %s, RemotePath: %s\n", yparser.GnmiPath2XPath(localPath, false), yparser.GnmiPath2XPath(remotePath, false))
 								cPtr.AddLeafRef(localPath, remotePath)
+								centry.AddLeafref(remotePath)
 							}
 							// add static leafref paths if they match
 							if remotePathString, ok := g.staticLeafRef[resPath]; ok {

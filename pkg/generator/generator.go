@@ -30,6 +30,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/yndd/ndd-runtime/pkg/logging"
+	"github.com/yndd/ndd-yang/pkg/container"
 	"github.com/yndd/ndd-yang/pkg/resource"
 	"github.com/yndd/ndd-yang/pkg/yparser"
 	"github.com/yndd/ndd-ygen/pkg/templ"
@@ -339,9 +340,75 @@ func (g *Generator) Run() error {
 			return err
 		}
 	}
+	g.updateContainerLeafRefTypes()
 	// updates the container has state
 	g.updateContainerStateChildStatus()
 	return nil
+}
+
+// updateContainerStateChildStatus updates the container HAs state info.
+// we first look at the entries and if one has state, we update the state from bottom to top
+func (g *Generator) updateContainerLeafRefTypes() {
+	if g.GetConfig().GetResourceMapAll() {
+		g.walkContainer(g.GetActualResources()[0].RootContainer)
+	}
+}
+
+func (g *Generator) walkContainer(c *container.Container) {
+	if c != nil {
+		for _, e := range c.GetEntries() {
+			//fmt.Printf("walkContainer: entryName: %s\n", e.Name)
+			if e.LeafRef {
+				leafRefType := getTypeFromPath(g.GetActualResources()[0].RootContainer, e.RemotePath.GetElem())
+				if leafRefType != "not found" {
+					e.Type = leafRefType
+				} else {
+					fmt.Printf("container: %s, entry: %s, remotePath: %s\n", c.Name, e.Name, yparser.GnmiPath2XPath(e.RemotePath, true))
+					fmt.Printf("leafref type: %s\n", getTypeFromPath(g.GetActualResources()[0].RootContainer, e.RemotePath.GetElem()))
+				}
+			}
+		}
+		for _, c := range c.GetChildren() {
+			g.walkContainer(c)
+		}
+	}
+}
+
+func getTypeFromPath(c *container.Container, elem []*gnmi.PathElem) string {
+	if len(elem) == 1 {
+		list := false
+		var entry *container.Entry
+		//fmt.Printf("getTypeFromPath: %v\n", elem)
+		for _, e := range c.GetEntries() {
+			if e.Key != "" {
+				list = true
+				entry = e
+			}
+			if e.Name == elem[0].GetName() {
+				if len(elem[0].Key) != 0 {
+					for _, e := range e.Next.GetEntries() {
+						for keyName := range elem[0].Key {
+							if e.Name == keyName {
+								return e.Type
+							}
+						}
+					}
+				}
+				return e.Type
+			}
+		}
+		if list {
+			return entry.Type
+		}
+	} else {
+		for _, c := range c.GetChildren() {
+			if c.Name == elem[0].GetName() {
+				return getTypeFromPath(c, elem[1:])
+			}
+		}
+
+	}
+	return "not found"
 }
 
 // updateContainerStateChildStatus updates the container HAs state info.

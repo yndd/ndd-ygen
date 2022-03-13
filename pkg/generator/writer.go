@@ -28,14 +28,13 @@ import (
 
 func renderContainers(c *container.Container) {
 	if c != nil {
-		/*
+
 		fmt.Printf("container info: %v\n", c)
 		fmt.Printf("getContainerList name: %s\n", c.GetFullNameWithRoot())
 
 		for _, e := range c.GetEntries() {
-			fmt.Printf("  entry Name: %s\n", e.Name)
+			fmt.Printf("  entry Name: %s, Type: %s\n", e.Name, e.Type)
 		}
-		*/
 
 		for _, c := range c.GetChildren() {
 			renderContainers(c)
